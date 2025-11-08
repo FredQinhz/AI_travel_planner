@@ -31,10 +31,10 @@
 # 数据库连接信息
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ai_travel_planner
 SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=your_password
+SPRING_DATASOURCE_PASSWORD=123
 
-# JWT密钥
-JWT_SECRET=your_jwt_secret_key
+# JWT密钥 (至少32字节)
+JWT_SECRET=ThisIsASecretKeyForJwtMustBeAtLeast32Bytes!
 
 # 可选：API密钥
 DASHSCOPE_API_KEY=your_dashscope_api_key
@@ -86,7 +86,9 @@ src/main/java/com/aitravelplanner/backend/
 │   ├── Trip.java            # 行程模型
 │   └── Expense.java         # 费用模型
 ├── dto/                     # 数据传输对象
-│   ├── AuthRequest.java     # 认证请求
+│   ├── AuthResponse.java    # 认证响应
+│   ├── LoginRequest.java    # 登录请求
+│   ├── RegisterRequest.java # 注册请求
 │   ├── TripRequest.java     # 行程请求
 │   └── SpeechRequest.java   # 语音请求
 └── util/                    # 工具类
