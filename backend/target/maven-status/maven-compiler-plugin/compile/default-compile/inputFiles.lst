@@ -11,7 +11,8 @@ C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\m
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\dto\TripRequest.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\LLMService.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\UserService.java
-C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\config\JpaJsonbConverter.java
+C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\controller\ExpenseController.java
+C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\controller\BudgetController.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\model\User.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\controller\TripController.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\config\JpaConfig.java
@@ -21,6 +22,9 @@ C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\m
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\security\SecurityConfig.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\Application.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\impl\MockLLMService.java
+C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\impl\BudgetServiceImpl.java
+C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\dto\BudgetResponse.java
+C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\BudgetService.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\service\TripService.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\controller\AuthController.java
 C:\Fred's Documents\NJUSE\codes\Grade5_first\LLM\ai-travel-planner\backend\src\main\java\com\aitravelplanner\backend\dto\AuthResponse.java

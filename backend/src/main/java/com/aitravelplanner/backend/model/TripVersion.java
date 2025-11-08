@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 import javax.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Table(name = "trip_versions")
@@ -19,9 +20,10 @@ public class TripVersion {
     private Trip trip;
     
     private Integer version;
-    
+
+    @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private String data; // JSON string for the trip data at this version
+    private String planData;
     
     private String description; // Optional description for this version
     private Instant createdAt = Instant.now();

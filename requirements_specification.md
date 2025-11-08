@@ -232,17 +232,12 @@ created_at TIMESTAMP
    * Trip 数据结构中加入 `budget` 字段
    * 实现 `BudgetService`：调用 LLM 估算、合并实际支出
 
-6. Map 与 导出
+6. Map
 
    * 在 Trip 页面显示地图与行程点
-   * 实现导出 PDF（后端使用 wkhtmltopdf 或前端通过浏览器打印为 PDF）
 
-7. CI/CD 与镜像打包
 
-   * 添加 GitHub Actions：mvn package、npm build、docker build -> docker push 到阿里云镜像仓库（使用 secrets: ALICLOUD_USERNAME, ALICLOUD_PASSWORD 等）
-   * 在 README 中写明如何填写 API key 与 Secrets
-
-8. 文档与交付
+7. 文档与交付
 
    * 编写 README、运行指南、Docker 运行示例
    * 生成最终 PDF（包含 GitHub 仓库地址与说明）

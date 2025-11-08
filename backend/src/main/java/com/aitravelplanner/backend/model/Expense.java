@@ -2,6 +2,7 @@ package com.aitravelplanner.backend.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import javax.persistence.*;
 import lombok.Data;
@@ -25,7 +26,11 @@ public class Expense {
     
     private BigDecimal amount;
     private String currency = "CNY"; // Default currency
-    private String comment;
+    private String comment; // 消费说明
     private String category; // Optional: for categorizing expenses
+    
+    // 消费日期，对应trip中plan_data中的行程日期
+    private LocalDate expenseDate;
+    
     private Instant createdAt = Instant.now();
 }
