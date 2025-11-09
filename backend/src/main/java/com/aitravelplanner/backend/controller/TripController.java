@@ -1,6 +1,7 @@
 package com.aitravelplanner.backend.controller;
 
 import com.aitravelplanner.backend.dto.TripRequest;
+import com.aitravelplanner.backend.dto.TripResponse;
 import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.model.User;
 import com.aitravelplanner.backend.repository.UserRepository;
@@ -33,49 +34,52 @@ public class TripController {
      * 创建新行程
      */
     @PostMapping
-    public ResponseEntity<Trip> createTrip(
+    public ResponseEntity<TripResponse> createTrip(
             @Valid @RequestBody TripRequest tripRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = getUserFromUserDetails(userDetails);
         Trip createdTrip = tripService.createTrip(tripRequest, user);
-        return new ResponseEntity<>(createdTrip, HttpStatus.CREATED);
+        return new ResponseEntity<>(convertToResponse(createdTrip), HttpStatus.CREATED);
     }
 
     /**
      * 获取当前用户的所有行程
      */
     @GetMapping
-    public ResponseEntity<List<Trip>> getTrips(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<TripResponse>> getTrips(@AuthenticationPrincipal UserDetails userDetails) {
         User user = getUserFromUserDetails(userDetails);
         List<Trip> trips = tripService.getTripsByUser(user);
-        return ResponseEntity.ok(trips);
+        List<TripResponse> responses = trips.stream()
+                .map(this::convertToResponse)
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(responses);
     }
 
     /**
      * 根据ID获取行程
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Trip> getTripById(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<TripResponse> getTripById(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
         User user = getUserFromUserDetails(userDetails);
         Trip trip = tripService.getTripById(id);
         // 验证权限
         if (!trip.getUser().getId().equals(user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(trip);
+        return ResponseEntity.ok(convertToResponse(trip));
     }
 
     /**
      * 更新行程
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Trip> updateTrip(
+    public ResponseEntity<TripResponse> updateTrip(
             @PathVariable UUID id,
             @Valid @RequestBody TripRequest tripRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = getUserFromUserDetails(userDetails);
         Trip updatedTrip = tripService.updateTrip(id, tripRequest, user);
-        return ResponseEntity.ok(updatedTrip);
+        return ResponseEntity.ok(convertToResponse(updatedTrip));
     }
 
     /**
@@ -94,5 +98,25 @@ public class TripController {
     private User getUserFromUserDetails(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+    
+    /**
+     * 将Trip实体转换为TripResponse DTO
+     */
+    private TripResponse convertToResponse(Trip trip) {
+        TripResponse response = new TripResponse();
+        response.setId(trip.getId());
+        response.setUserId(trip.getUser().getId()); // 将user实体改为userId
+        response.setTitle(trip.getTitle());
+        response.setDestination(trip.getDestination());
+        response.setStartDate(trip.getStartDate());
+        response.setEndDate(trip.getEndDate());
+        response.setBudgetTotal(trip.getBudgetTotal());
+        response.setCompanionCount(trip.getCompanionCount());
+        response.setPreferences(trip.getPreferences());
+        response.setPlanData(trip.getPlanData());
+        response.setCreatedAt(trip.getCreatedAt());
+        response.setUpdatedAt(trip.getUpdatedAt());
+        return response;
     }
 }
