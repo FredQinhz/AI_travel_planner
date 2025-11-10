@@ -7,14 +7,10 @@ import java.util.List;
 import java.util.UUID;
 import javax.persistence.*;
 
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.Data;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
 
 @Entity
 @Table(name = "trips")
-@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @Data
 public class Trip {
     @Id
@@ -41,11 +37,6 @@ public class Trip {
     @CollectionTable(name = "trip_preferences")
     @Column(name = "preference")
     private List<String> preferences;
-    
-    // planData - 存储LLM生成的旅行计划
-    @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
-    private String planData;
     
     private Instant createdAt = Instant.now();
     private Instant updatedAt;

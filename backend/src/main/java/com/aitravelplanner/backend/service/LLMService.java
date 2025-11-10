@@ -1,16 +1,13 @@
 package com.aitravelplanner.backend.service;
 
-import java.time.LocalDate;
+import com.aitravelplanner.backend.dto.DayPlansDTO;
+import com.aitravelplanner.backend.model.Trip;
 
 public interface LLMService {
     /**
      * 根据结构化请求生成旅行计划草案
-     * @param destination 目的地
-     * @param startDate 开始日期
-     * @param endDate 结束日期
-     * @param budgetTotal 总预算
-     * @param request 原始用户请求文本
-     * @return JSON字符串格式的旅行计划草案
+     * @param trip 行程对象，包含目的地、开始日期、结束日期、总预算和原始用户请求文本
+     * @return 行程计划数据传输对象
      */
-    String generatePlan(String destination, LocalDate startDate, LocalDate endDate, Double budgetTotal, String request);
+    DayPlansDTO generatePlan(Trip trip);
 }

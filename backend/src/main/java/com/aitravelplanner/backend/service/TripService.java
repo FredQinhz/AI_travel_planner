@@ -1,7 +1,7 @@
 package com.aitravelplanner.backend.service;
 
 import com.aitravelplanner.backend.dto.TripRequest;
-import com.aitravelplanner.backend.model.Trip;
+import com.aitravelplanner.backend.dto.TripResponse;
 import com.aitravelplanner.backend.model.User;
 
 import java.util.List;
@@ -9,24 +9,24 @@ import java.util.UUID;
 
 public interface TripService {
     /**
-     * 创建新行程，如果提供了request字段则调用LLM生成计划草案
+     * 创建新行程
      */
-    Trip createTrip(TripRequest tripRequest, User user);
+    TripResponse createTrip(TripRequest tripRequest, User user);
     
     /**
      * 获取用户的所有行程
      */
-    List<Trip> getTripsByUser(User user);
+    List<TripResponse> getTripsByUser(User user);
     
     /**
-     * 根据ID获取行程
+     * 根据ID获取行程，并验证用户权限
      */
-    Trip getTripById(UUID id);
+    TripResponse getTripById(UUID id, User user);
     
     /**
      * 更新行程
      */
-    Trip updateTrip(UUID id, TripRequest tripRequest, User user);
+    TripResponse updateTrip(UUID id, TripRequest tripRequest, User user);
     
     /**
      * 删除行程
