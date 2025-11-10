@@ -1,6 +1,6 @@
 package com.aitravelplanner.backend.service;
 
-import com.aitravelplanner.backend.dto.DayPlansDTO;
+import com.aitravelplanner.backend.dto.DayPlanDTO;
 import com.aitravelplanner.backend.model.Location;
 import com.aitravelplanner.backend.model.Trip;
 
@@ -20,7 +20,7 @@ public interface LocationService {
     /**
      * 保存行程的位置信息
      */
-    void saveLocations(Trip trip, DayPlansDTO dayPlansDTO);
+    void saveLocations(Trip trip, List<DayPlanDTO> dayPlans);
     
     /**
      * 删除行程相关的所有位置

@@ -3,7 +3,6 @@ package com.aitravelplanner.backend.service.impl;
 import org.springframework.stereotype.Service;
 
 import com.aitravelplanner.backend.dto.DayPlanDTO;
-import com.aitravelplanner.backend.dto.DayPlansDTO;
 import com.aitravelplanner.backend.dto.LocationDTO;
 import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.service.LLMService;
@@ -18,10 +17,8 @@ import java.util.List;
 public class MockLLMService implements LLMService {
 
     @Override
-    public DayPlansDTO generatePlan(Trip trip) {
-        DayPlansDTO dayPlansDTO = new DayPlansDTO();
+    public List<DayPlanDTO> generatePlan(Trip trip) {
         List<DayPlanDTO> planData = new ArrayList<>();
-        dayPlansDTO.setDayPlans(planData);
         
         // 假设行程有2天
         int days = 2;
@@ -72,7 +69,7 @@ public class MockLLMService implements LLMService {
             planData.add(dayPlanDTO);
         }
         
-        return dayPlansDTO;
+        return planData;
     }
     
     /**

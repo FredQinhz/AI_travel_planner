@@ -54,10 +54,10 @@ public class TripServiceImpl implements TripService {
         Trip savedTrip = tripRepository.save(trip);
         
         // 调用LLMService生成行程计划
-        DayPlansDTO dayPlansDTO = llmService.generatePlan(savedTrip);
+        List<DayPlanDTO> dayPlans = llmService.generatePlan(savedTrip);
         
         // 保存位置信息到数据库
-        locationService.saveLocations(savedTrip, dayPlansDTO);
+        locationService.saveLocations(savedTrip, dayPlans);
         
         return convertToResponse(savedTrip);
     }
@@ -113,11 +113,11 @@ public class TripServiceImpl implements TripService {
 
         Trip updatedTrip = tripRepository.save(trip);
         
-        // 调用LLMService生成行程计划
-        DayPlansDTO dayPlansDTO = llmService.generatePlan(updatedTrip);
+        // 调用LLMService重新生成行程计划
+        List<DayPlanDTO> dayPlans = llmService.generatePlan(updatedTrip);
         
         // 保存位置信息到数据库
-        locationService.saveLocations(updatedTrip, dayPlansDTO);
+        locationService.saveLocations(updatedTrip, dayPlans);
         
         return convertToResponse(updatedTrip);
     }
@@ -153,8 +153,8 @@ public class TripServiceImpl implements TripService {
         
         // 从数据库中查询位置信息并构建行程计划
         List<Location> locations = locationService.findByTripId(trip.getId());
-        DayPlansDTO dayPlansDTO = buildDayPlansFromLocations(locations);
-        response.setDayPlans(dayPlansDTO);
+        List<DayPlanDTO> dayPlans = buildDayPlansFromLocations(locations);
+        response.setDayPlans(dayPlans);
         
         response.setCreatedAt(trip.getCreatedAt());
         response.setUpdatedAt(trip.getUpdatedAt());
@@ -162,10 +162,9 @@ public class TripServiceImpl implements TripService {
     }
     
     /**
-     * 从Location列表构建DayPlansDTO
+     * 从Location列表构建DayPlanDTO列表
      */
-    private DayPlansDTO buildDayPlansFromLocations(List<Location> locations) {
-        DayPlansDTO dayPlansDTO = new DayPlansDTO();
+    private List<DayPlanDTO> buildDayPlansFromLocations(List<Location> locations) {
         List<DayPlanDTO> planData = new ArrayList<>();
         
         // 按天分组
@@ -187,8 +186,7 @@ public class TripServiceImpl implements TripService {
             planData.add(dayPlanDTO);
         }
         
-        dayPlansDTO.setDayPlans(planData);
-        return dayPlansDTO;
+        return planData;
     }
     
     /**

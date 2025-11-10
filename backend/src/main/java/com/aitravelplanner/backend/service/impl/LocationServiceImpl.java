@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.aitravelplanner.backend.dto.DayPlanDTO;
-import com.aitravelplanner.backend.dto.DayPlansDTO;
 import com.aitravelplanner.backend.dto.LocationDTO;
 import com.aitravelplanner.backend.model.Location;
 import com.aitravelplanner.backend.model.Trip;
@@ -33,13 +32,13 @@ public class LocationServiceImpl implements LocationService {
     }
     
     @Override
-    public void saveLocations(Trip trip, DayPlansDTO dayPlansDTO) {
+    public void saveLocations(Trip trip, List<DayPlanDTO> dayPlans) {
         try {
             // 首先删除该行程已有的位置信息
             locationRepository.deleteByTripId(trip.getId());
             
-            if (dayPlansDTO != null && dayPlansDTO.getDayPlans() != null) {
-                for (DayPlanDTO dayPlanDTO : dayPlansDTO.getDayPlans()) {
+            if (dayPlans != null) {
+                for (DayPlanDTO dayPlanDTO : dayPlans) {
                     int day = dayPlanDTO.getDay();
                     int order = 1;
                     

@@ -1,6 +1,6 @@
 package com.aitravelplanner.backend.service.impl;
 
-import com.aitravelplanner.backend.dto.DayPlansDTO;
+import com.aitravelplanner.backend.dto.DayPlanDTO;
 import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.service.LLMService;
 import com.alibaba.dashscope.aigc.generation.Generation;
@@ -8,6 +8,7 @@ import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class LLMServiceImpl implements LLMService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public DayPlansDTO generatePlan(Trip trip) {
+    public List<DayPlanDTO> generatePlan(Trip trip) {
         try {
             String prompt = buildPrompt(trip);
 
@@ -52,7 +53,10 @@ public class LLMServiceImpl implements LLMService {
 
             log.info("LLM 返回 JSON: {}", json);
 
-            return objectMapper.readValue(json, DayPlansDTO.class);
+            // 解析JSON，直接提取dayPlans数组
+            JsonNode rootNode = objectMapper.readTree(json);
+            return objectMapper.readValue(rootNode.get("dayPlans").traverse(), 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, DayPlanDTO.class));
 
         } catch (Exception e) {
             log.error("调用通义千问失败", e);

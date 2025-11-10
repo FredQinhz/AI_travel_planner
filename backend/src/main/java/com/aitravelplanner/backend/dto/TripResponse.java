@@ -19,7 +19,7 @@ public class TripResponse {
     private BigDecimal budgetTotal;
     private Integer companionCount;
     private List<String> preferences;
-    private DayPlansDTO dayPlans;
+    private List<DayPlanDTO> dayPlans;
     private Instant createdAt;
     private Instant updatedAt;
 }
