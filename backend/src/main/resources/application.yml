@@ -19,5 +19,6 @@ jwt:
   expiration-ms: ${JWT_EXP_MS:86400000}
 
 llm:
-  provider: ${LLM_PROVIDER:mock} # mock | tongyi
-  tongyi.api_key: ${TONGYI_API_KEY:}
+  qwen:
+    apiKey: ${QWEN_API_KEY:sk-1e071cc30d7e46ac9eeb75c9bb7c9e01}
+    model: qwen-max

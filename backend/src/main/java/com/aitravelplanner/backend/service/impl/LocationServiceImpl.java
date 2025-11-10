@@ -38,8 +38,8 @@ public class LocationServiceImpl implements LocationService {
             // 首先删除该行程已有的位置信息
             locationRepository.deleteByTripId(trip.getId());
             
-            if (dayPlansDTO != null && dayPlansDTO.getPlanData() != null) {
-                for (DayPlanDTO dayPlanDTO : dayPlansDTO.getPlanData()) {
+            if (dayPlansDTO != null && dayPlansDTO.getDayPlans() != null) {
+                for (DayPlanDTO dayPlanDTO : dayPlansDTO.getDayPlans()) {
                     int day = dayPlanDTO.getDay();
                     int order = 1;
                     

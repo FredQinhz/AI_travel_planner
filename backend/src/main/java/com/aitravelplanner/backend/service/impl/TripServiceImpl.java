@@ -5,9 +5,9 @@ import com.aitravelplanner.backend.model.Location;
 import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.model.User;
 import com.aitravelplanner.backend.repository.TripRepository;
+import com.aitravelplanner.backend.service.LLMService;
 import com.aitravelplanner.backend.service.LocationService;
 import com.aitravelplanner.backend.service.TripService;
-import com.aitravelplanner.backend.service.impl.MockLLMService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
-    private final MockLLMService mockLLMService;
+    private final LLMService llmService;
     private final LocationService locationService;
 
     @Autowired
-    public TripServiceImpl(TripRepository tripRepository, MockLLMService mockLLMService, LocationService locationService) {
+    public TripServiceImpl(TripRepository tripRepository, LLMServiceImpl llmServiceImpl, LocationService locationService) {
         this.tripRepository = tripRepository;
-        this.mockLLMService = mockLLMService;
+        this.llmService = llmServiceImpl;
         this.locationService = locationService;
     }
 
@@ -54,7 +54,7 @@ public class TripServiceImpl implements TripService {
         Trip savedTrip = tripRepository.save(trip);
         
         // 调用LLMService生成行程计划
-        DayPlansDTO dayPlansDTO = mockLLMService.generatePlan(savedTrip);
+        DayPlansDTO dayPlansDTO = llmService.generatePlan(savedTrip);
         
         // 保存位置信息到数据库
         locationService.saveLocations(savedTrip, dayPlansDTO);
@@ -114,7 +114,7 @@ public class TripServiceImpl implements TripService {
         Trip updatedTrip = tripRepository.save(trip);
         
         // 调用LLMService生成行程计划
-        DayPlansDTO dayPlansDTO = mockLLMService.generatePlan(updatedTrip);
+        DayPlansDTO dayPlansDTO = llmService.generatePlan(updatedTrip);
         
         // 保存位置信息到数据库
         locationService.saveLocations(updatedTrip, dayPlansDTO);
@@ -154,7 +154,7 @@ public class TripServiceImpl implements TripService {
         // 从数据库中查询位置信息并构建行程计划
         List<Location> locations = locationService.findByTripId(trip.getId());
         DayPlansDTO dayPlansDTO = buildDayPlansFromLocations(locations);
-        response.setPlanData(dayPlansDTO);
+        response.setDayPlans(dayPlansDTO);
         
         response.setCreatedAt(trip.getCreatedAt());
         response.setUpdatedAt(trip.getUpdatedAt());
@@ -187,7 +187,7 @@ public class TripServiceImpl implements TripService {
             planData.add(dayPlanDTO);
         }
         
-        dayPlansDTO.setPlanData(planData);
+        dayPlansDTO.setDayPlans(planData);
         return dayPlansDTO;
     }
     

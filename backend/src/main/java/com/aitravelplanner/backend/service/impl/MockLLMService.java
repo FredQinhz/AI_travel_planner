@@ -21,7 +21,7 @@ public class MockLLMService implements LLMService {
     public DayPlansDTO generatePlan(Trip trip) {
         DayPlansDTO dayPlansDTO = new DayPlansDTO();
         List<DayPlanDTO> planData = new ArrayList<>();
-        dayPlansDTO.setPlanData(planData);
+        dayPlansDTO.setDayPlans(planData);
         
         // 假设行程有2天
         int days = 2;
