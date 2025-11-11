@@ -745,17 +745,21 @@ const handleCreateTrip = async () => {
         <div class="voice-buttons">
           <!-- 整合的录音按钮 -->
           <el-button
-        :type="isListening ? 'danger' : 'primary'"
-        @click="toggleListening"
-        size="large"
-        circle
-        class="microphone-btn"
-        :loading="false"
-        :title="isListening ? '点击停止录音' : '点击开始录音'"
-      >
-        <el-icon v-if="!isListening"><Microphone /></el-icon>
-        <el-icon v-else><VideoPause /></el-icon>
-      </el-button>
+            :type="isListening ? 'danger' : 'primary'"
+            @click="toggleListening"
+            size="large"
+            circle
+            class="microphone-btn"
+            :loading="false"
+            :title="isListening ? '点击停止录音' : '点击开始录音'"
+          >
+            <el-icon v-if="!isListening">
+              <Microphone />
+            </el-icon>
+            <el-icon v-else>
+              <VideoPause />
+            </el-icon>
+          </el-button>
           
           <el-button
             type="info"
@@ -979,39 +983,17 @@ const handleCreateTrip = async () => {
   height: 100px;
   font-size: 24px;
   border-radius: 50%;
+  box-shadow: 0 8px 25px rgba(64, 158, 255, 0.3);
   transition: all 0.3s ease;
-  position: relative;
-}
-
-/* 录音状态样式 */
-.microphone-btn:not(.is-loading) {
-  animation: pulse 2s infinite;
-}
-
-.microphone-btn.is-loading {
-  animation: recording-pulse 1s infinite;
 }
 
 .microphone-btn:hover {
   transform: translateY(-2px);
-}
-
-/* 非录音状态（蓝色主题） */
-.microphone-btn.el-button--primary {
-  box-shadow: 0 8px 25px rgba(64, 158, 255, 0.3);
-}
-
-.microphone-btn.el-button--primary:hover {
   box-shadow: 0 12px 30px rgba(64, 158, 255, 0.4);
 }
 
-/* 录音状态（红色主题） */
-.microphone-btn.el-button--danger {
-  box-shadow: 0 8px 25px rgba(245, 108, 108, 0.4);
-}
-
-.microphone-btn.el-button--danger:hover {
-  box-shadow: 0 12px 30px rgba(245, 108, 108, 0.5);
+.microphone-btn:not(.is-loading) {
+  animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
@@ -1023,21 +1005,6 @@ const handleCreateTrip = async () => {
   }
   100% {
     box-shadow: 0 8px 25px rgba(64, 158, 255, 0.3);
-  }
-}
-
-@keyframes recording-pulse {
-  0% {
-    box-shadow: 0 8px 25px rgba(245, 108, 108, 0.4);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 8px 25px rgba(245, 108, 108, 0.7);
-    transform: scale(1.05);
-  }
-  100% {
-    box-shadow: 0 8px 25px rgba(245, 108, 108, 0.4);
-    transform: scale(1);
   }
 }
 

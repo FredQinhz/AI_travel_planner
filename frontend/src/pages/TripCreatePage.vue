@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { ArrowLeft } from '@element-plus/icons-vue';
 import TextTripForm from '@/components/TextTripForm.vue';
 import VoiceTripForm from '@/components/VoiceTripForm.vue';
 
@@ -29,7 +30,9 @@ const handleCreateSuccess = (tripId: string) => {
   <div class="trip-create-container">
     <header class="page-header">
       <div class="header-content">
-        <el-button type="text" icon="el-icon-arrow-left" @click="goBack" class="back-button"></el-button>
+        <el-button type="text" @click="goBack" class="back-button">
+          <el-icon><ArrowLeft /></el-icon>
+        </el-button>
         <h2 class="page-title">创建新的行程</h2>
       </div>
     </header>
@@ -122,9 +125,8 @@ const handleCreateSuccess = (tripId: string) => {
   margin: 0;
   border-bottom: 1px solid #ebeef5;
   background-color: #fff;
-  position: sticky;
-  top: 64px; /* 与header高度匹配 */
-  z-index: 50;
+  /* 移除sticky定位，避免遮挡表单内容 */
+  z-index: 1;
 }
 
 .mode-toggle-buttons {

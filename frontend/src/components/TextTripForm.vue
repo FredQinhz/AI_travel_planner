@@ -96,6 +96,21 @@ const handleCreate = async () => {
     loading.value = false;
   }
 };
+
+// 清空表单
+const clearForm = () => {
+  form.value = {
+    title: '',
+    destination: '',
+    startDate: '',
+    endDate: '',
+    budgetTotal: 0,
+    companionCount: 0,
+    preferences: [] as string[],
+    request: ''
+  };
+  ElMessage.success('表单已清空');
+};
 </script>
 
 <template>
@@ -180,7 +195,7 @@ const handleCreate = async () => {
       ></el-input>
     </el-form-item>
     <el-form-item>
-      <el-button style="margin-right: 10px">取消</el-button>
+      <el-button style="margin-right: 10px" @click="clearForm">清空</el-button>
       <el-button type="primary" @click="handleCreate" :loading="loading">创建行程</el-button>
     </el-form-item>
   </el-form>
@@ -189,5 +204,20 @@ const handleCreate = async () => {
 <style scoped>
 .trip-create-form {
   padding: 20px 0;
+}
+
+/* 按钮居中 - 强制覆盖Element Plus默认样式 */
+.trip-create-form :deep(.el-form-item:last-child) {
+  text-align: center !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.trip-create-form :deep(.el-form-item:last-child .el-form-item__content) {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 </style>
