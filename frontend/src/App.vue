@@ -1,10 +1,23 @@
 <script setup lang="ts">
-// App 主组件
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppLayout from '@/components/layout/AppLayout.vue'
+
+const route = useRoute()
+
+// 判断是否需要显示布局（登录/注册页面不需要）
+const showLayout = computed(() => {
+  const noLayoutRoutes = ['/login', '/register']
+  return !noLayoutRoutes.includes(route.path)
+})
 </script>
 
 <template>
   <div class="app-container">
-    <router-view />
+    <AppLayout v-if="showLayout">
+      <router-view />
+    </AppLayout>
+    <router-view v-else />
   </div>
 </template>
 

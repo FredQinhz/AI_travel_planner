@@ -36,6 +36,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/TripDetail.vue'),
     meta: { requiresAuth: true },
     props: true
+  },
+  {
+    path: '/map',
+    name: 'Map',
+    component: () => import('@/pages/MapPage.vue'),
+    meta: { requiresAuth: true }
   }
 ];
 

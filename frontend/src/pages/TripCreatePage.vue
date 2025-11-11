@@ -80,9 +80,10 @@ const handleCreateSuccess = (tripId: string) => {
   padding: 16px 24px;
   border-bottom: 1px solid #ebeef5;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
+  /* 添加顶部边距，避免被AppLayout的顶部导航栏遮挡 */
+  margin-top: 64px;
 }
 
 .header-content {
@@ -96,9 +97,6 @@ const handleCreateSuccess = (tripId: string) => {
 .back-button {
   position: absolute;
   left: 0;
-}
-
-.back-button {
   font-size: 18px;
 }
 
@@ -112,11 +110,15 @@ const handleCreateSuccess = (tripId: string) => {
 .page-main {
   padding: 24px;
   flex: 1;
+  /* 确保内容区域也有足够的上边距 */
+  margin-top: 0;
 }
 
 .create-form-card {
   border-radius: 12px;
   overflow: hidden;
+  /* 确保卡片不会被遮挡 */
+  margin-top: 0;
 }
 
 .create-mode-switch {
@@ -125,7 +127,6 @@ const handleCreateSuccess = (tripId: string) => {
   margin: 0;
   border-bottom: 1px solid #ebeef5;
   background-color: #fff;
-  /* 移除sticky定位，避免遮挡表单内容 */
   z-index: 1;
 }
 
@@ -160,6 +161,11 @@ const handleCreateSuccess = (tripId: string) => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .page-header {
+    padding: 12px 16px;
+    margin-top: 56px; /* 移动端顶部导航栏可能更小 */
+  }
+  
   .page-main {
     padding: 16px;
   }
