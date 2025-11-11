@@ -77,7 +77,7 @@
       </header>
       
       <!-- 页面内容 -->
-      <div class="content-area" :class="{ 'no-top-header': isTripDetailPage }">
+      <div class="content-area" :class="{ 'no-top-header': isTripDetailPage, 'map-page': isMapPage }">
         <slot></slot>
       </div>
     </main>
@@ -125,6 +125,11 @@ const currentPageTitle = computed(() => getPageTitle(route))
 // 判断是否是行程详情页面
 const isTripDetailPage = computed(() => {
   return route.path.startsWith('/trips/') && route.params.id
+})
+
+// 判断是否是地图页面
+const isMapPage = computed(() => {
+  return route.path === '/map'
 })
 
 // 菜单项配置
@@ -415,6 +420,13 @@ onMounted(() => {
   padding-top: 0;
   padding-bottom: 0;
   overflow-y: visible; /* 让子页面自己控制滚动 */
+}
+
+/* 地图页面样式 - 移除所有 padding，让地图占据整个空间 */
+.content-area.map-page {
+  padding: 0;
+  overflow: hidden; /* 让地图页面自己控制滚动 */
+  height: calc(100vh - 64px); /* 减去顶部栏高度 */
 }
 
 /* 响应式设计 */
