@@ -291,10 +291,9 @@ const getLocationTypeName = (type: string) => {
 
 <style scoped>
 .trip-detail-page {
-  height: 100vh;
-  width: 100vw;
+  min-height: calc(100vh - 80px);
   margin: 0;
-  padding: 0;
+  padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   font-family: 'Helvetica Neue', Arial, sans-serif;
   overflow-x: hidden;
@@ -307,17 +306,13 @@ const getLocationTypeName = (type: string) => {
   color: white;
   padding: 15px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 100vw;
-  margin: 0;
-  position: relative;
-  left: 0;
-  right: 0;
+  margin: 0 -20px 20px -20px;
 }
 
 .header-content {
-  width: 100vw;
-  margin: 0;
-  padding: 0 15px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -333,20 +328,18 @@ const getLocationTypeName = (type: string) => {
 
 /* 主要内容区域 */
 .main-content {
-  width: 100vw;
-  height: calc(100vh - 70px);
-  margin: 0;
-  padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - 200px);
   box-sizing: border-box;
 }
 
 .layout-container {
   display: flex;
-  gap: 0;
-  height: 100%;
-  width: 100vw;
-  overflow: hidden;
-  margin: 0;
+  gap: 20px;
+  min-height: 500px;
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 0;
 }
 
@@ -359,9 +352,10 @@ const getLocationTypeName = (type: string) => {
   gap: 15px;
   padding: 15px;
   background: #f8f9fa;
-  border-right: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  height: 100%;
+  min-height: 500px;
   box-sizing: border-box;
 }
 
@@ -371,8 +365,10 @@ const getLocationTypeName = (type: string) => {
   min-width: 0;
   padding: 15px;
   background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  height: 100%;
+  min-height: 500px;
   box-sizing: border-box;
 }
 
@@ -526,7 +522,7 @@ const getLocationTypeName = (type: string) => {
 /* 地图容器 */
 .map-container-wrapper {
   position: relative;
-  height: calc(100vh - 160px);
+  height: 600px;
   border-radius: 12px;
   overflow: hidden;
   background: #f8f9fa;

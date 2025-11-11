@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useTripsStore } from '@/stores/trips';
-import { ElTable, ElTableColumn, ElButton, ElCard, ElEmpty } from 'element-plus';
+import { ElTable, ElTableColumn, ElButton, ElCard, ElEmpty, ElMessageBox, ElMessage } from 'element-plus';
 import { 
   Calendar, 
   Money, 
@@ -11,7 +11,8 @@ import {
   SuccessFilled, 
   Plus, 
   Location, 
-  View 
+  View,
+  Delete 
 } from '@element-plus/icons-vue';
 
 const router = useRouter();
@@ -60,6 +61,35 @@ const createNewTrip = () => {
 // 查看行程详情
 const viewTrip = (tripId: string) => {
   router.push(`/trips/${tripId}`);
+}
+
+// 删除行程
+const deleteTrip = async (tripId: string, tripTitle: string) => {
+  try {
+    // 显示确认对话框
+    await ElMessageBox.confirm(
+      `确定要删除行程「${tripTitle}」吗？此操作无法撤销。`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    // 调用删除方法
+    const success = await tripsStore.deleteTrip(tripId);
+    if (success) {
+      ElMessage.success('行程删除成功');
+    } else {
+      ElMessage.error(tripsStore.error || '删除失败');
+    }
+  } catch (error: any) {
+    // 用户取消删除时不显示错误消息
+    if (error !== 'cancel') {
+      ElMessage.error('删除操作失败');
+    }
+  }
 };
 
 
@@ -212,16 +242,28 @@ onMounted(() => {
               ¥{{ row.budgetTotal }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" min-width="100" fixed="right">
+          <el-table-column label="操作" min-width="200" fixed="right">
             <template #default="{ row }">
-              <el-button 
-                type="primary" 
-                size="small" 
-                @click="viewTrip(row.id)"
-                :icon="View"
-              >
-                查看
-              </el-button>
+              <div class="action-buttons">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="viewTrip(row.id)"
+                  :icon="View"
+                  class="action-button"
+                >
+                  查看
+                </el-button>
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  @click="deleteTrip(row.id, row.title)"
+                  :icon="Delete"
+                  class="action-button"
+                >
+                  删除
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -303,7 +345,7 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   /* 添加顶部边距，避免被AppLayout的顶部导航栏遮挡 */
-  margin-top: 64px;
+  margin-top: 500px;
 }
 
 /* 统计概览样式 */
@@ -388,6 +430,16 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-button {
+  flex-shrink: 0;
 }
 
 .card-title {

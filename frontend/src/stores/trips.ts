@@ -123,6 +123,32 @@ export const useTripsStore = defineStore('trips', {
         this.isLoading = false;
       }
     },
+    
+    async deleteTrip(id: string) {
+      this.isLoading = true;
+      this.error = '';
+      try {
+        await api.delete(`/trips/${id}`);
+        
+        // 更新本地状态
+        const index = this.trips.findIndex(trip => trip.id === id);
+        if (index !== -1) {
+          this.trips.splice(index, 1);
+        }
+        
+        // 如果删除的是当前行程，清除当前行程
+        if (this.currentTrip?.id === id) {
+          this.currentTrip = null;
+        }
+        
+        return true;
+      } catch (error: any) {
+        this.error = error.response?.data || '删除行程失败';
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
 
     async fetchLocations(tripId: string) {
       this.isLoading = true;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, onUnmounted } from 'vue';
 import { useTripsStore } from '@/stores/trips';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Microphone, VideoPause } from '@element-plus/icons-vue';
 import type { TripRequest } from '@/stores/trips';
@@ -57,6 +58,7 @@ const emit = defineEmits<{
 }>();
 
 const tripsStore = useTripsStore();
+const router = useRouter();
 
 // 语音识别文本
 const voiceText = ref('');
@@ -220,6 +222,7 @@ const tripDefaults = reactive({
 
 // 加载状态
 const loading = ref(false);
+const showLoadingOverlay = ref(false);
 
 // 智能提取行程信息（增强版本）
 const extractTripInfoFromText = (text: string) => {
@@ -704,6 +707,7 @@ const handleCreateTrip = async () => {
   
   try {
     loading.value = true;
+    showLoadingOverlay.value = true;
     
     // 构建行程请求对象
     const tripRequest: TripRequest = {
@@ -714,13 +718,23 @@ const handleCreateTrip = async () => {
     // 调用创建行程API
     const trip = await tripsStore.createTrip(tripRequest);
     
-    if (trip) {
-      ElMessage.success('行程创建成功');
-      emit('createSuccess', trip.id);
-    } else {
-      ElMessage.error(tripsStore.error || '行程创建失败');
-    }
+    // 不再需要进度条，直接等待后端返回
+    
+    // 短暂延迟后关闭遮罩并显示成功消息，然后跳转到dashboard
+    setTimeout(() => {
+      showLoadingOverlay.value = false;
+      if (trip) {
+        ElMessage.success('旅行计划已生成');
+        // 自动跳转到dashboard页面并刷新
+        router.push('/dashboard').then(() => {
+          window.location.reload();
+        });
+      } else {
+        ElMessage.error(tripsStore.error || '行程创建失败');
+      }
+    }, 25000);
   } catch (error) {
+    showLoadingOverlay.value = false;
     ElMessage.error('创建行程时发生错误');
   } finally {
     loading.value = false;
@@ -937,9 +951,44 @@ const handleCreateTrip = async () => {
       </el-button>
     </div>
   </div>
+  
+  <!-- 全屏灰色遮罩 -->
+  <div 
+    v-if="showLoadingOverlay" 
+    class="loading-overlay"
+  >
+    <div class="loading-content">
+      <el-spinner size="large" />
+      <p class="loading-text">正在生成旅行计划...</p>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* 全屏灰色遮罩样式 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+}
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+}
+
 .voice-input-container {
   width: 100%;
   max-width: 800px;
