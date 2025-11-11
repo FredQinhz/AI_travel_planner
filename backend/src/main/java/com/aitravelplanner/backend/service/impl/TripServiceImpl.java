@@ -5,8 +5,10 @@ import com.aitravelplanner.backend.model.Location;
 import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.model.User;
 import com.aitravelplanner.backend.repository.TripRepository;
+import com.aitravelplanner.backend.repository.ExpenseRepository;
 import com.aitravelplanner.backend.service.LLMService;
 import com.aitravelplanner.backend.service.LocationService;
+import com.aitravelplanner.backend.service.ExpenseService;
 import com.aitravelplanner.backend.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,12 +24,16 @@ public class TripServiceImpl implements TripService {
     private final TripRepository tripRepository;
     private final LLMService llmService;
     private final LocationService locationService;
+    private final ExpenseService expenseService;
+    private final ExpenseRepository expenseRepository;
 
     @Autowired
-    public TripServiceImpl(TripRepository tripRepository, LLMServiceImpl llmServiceImpl, LocationService locationService) {
+    public TripServiceImpl(TripRepository tripRepository, LLMServiceImpl llmServiceImpl, LocationService locationService, ExpenseService expenseService, ExpenseRepository expenseRepository) {
         this.tripRepository = tripRepository;
         this.llmService = llmServiceImpl;
         this.locationService = locationService;
+        this.expenseService = expenseService;
+        this.expenseRepository = expenseRepository;
     }
 
     @Override
@@ -133,6 +139,14 @@ public class TripServiceImpl implements TripService {
             throw new IllegalArgumentException("You don't have permission to delete this trip");
         }
 
+        // 级联删除顺序：
+        // 1. 删除locations表中的相关记录
+        locationService.deleteByTripId(id);
+        
+        // 2. 删除expenses表中的相关记录
+        expenseRepository.deleteByTripId(id);
+        
+        // 3. 删除trips表中的记录（删除Trip时会自动级联删除trip_preferences表中的记录）
         tripRepository.delete(trip);
     }
     

@@ -288,12 +288,18 @@ HTTP/1.1 400 Bad Request
 
 **请求**
 ```http
-DELETE /api/trips/{id}
+DELETE /api/trips/{tripId}
 Authorization: Bearer <token>
 ```
 
 **路径参数**
-- `id`: 行程的UUID
+- `tripId`: 行程的UUID
+
+**功能说明**
+此接口执行行程的级联删除操作，会按照以下顺序删除相关数据：
+1. 首先删除 `locations` 表中与该行程相关的所有记录
+2. 然后删除 `expenses` 表中与该行程相关的所有消费记录
+3. 最后删除 `trips` 表中的行程记录，同时会自动级联删除 `trip_preferences` 表中的相关记录
 
 **响应**
 ```
@@ -302,6 +308,11 @@ HTTP/1.1 200 OK
 
 # 失败 - 无权访问或行程不存在
 HTTP/1.1 400 Bad Request
+"You don't have permission to delete this trip"
+
+# 失败 - 行程不存在
+HTTP/1.1 400 Bad Request
+"Trip not found with id: {tripId}"
 ```
 
 ### 3.3 预算和费用管理

@@ -16,4 +16,5 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     List<Expense> findByUser(User user);
     List<Expense> findByUserId(UUID userId);
     List<Expense> findByTripIdAndUserId(UUID tripId, UUID userId);
+    void deleteByTripId(UUID tripId);
 }

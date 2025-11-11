@@ -77,10 +77,11 @@ public class TripController {
     /**
      * 删除行程
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTrip(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
+    @DeleteMapping("/{tripId}")
+    public ResponseEntity<Void> deleteTrip(@PathVariable UUID tripId, @AuthenticationPrincipal UserDetails userDetails) {
         User user = getUserFromUserDetails(userDetails);
-        tripService.deleteTrip(id, user);
+        // 调用服务层删除行程，该方法会级联删除trip_preferences、locations、expenses表中的相关记录
+        tripService.deleteTrip(tripId, user);
         return ResponseEntity.noContent().build();
     }
     
