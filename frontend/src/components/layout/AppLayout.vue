@@ -34,16 +34,20 @@
           :title="isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'"
         >
           <el-icon>
-            <component :is="isSidebarCollapsed ? 'ArrowRight' : 'ArrowLeft'" />
+            <component :is="sidebarToggleIcon" />
           </el-icon>
         </el-button>
       </div>
     </aside>
     
     <!-- 主内容区 -->
-    <main class="main-content" :class="{ 'sidebar-collapsed': isSidebarCollapsed }">
-      <!-- 顶部导航栏 -->
-      <header class="top-header">
+    <main 
+      class="main-content" 
+      :class="{ 'sidebar-collapsed': isSidebarCollapsed }"
+      :style="{ '--sidebar-width': isSidebarCollapsed ? '64px' : '240px' }"
+    >
+      <!-- 顶部导航栏 - 在行程详情页面隐藏 -->
+      <header v-if="!isTripDetailPage" class="top-header">
         <div class="header-left">
           <el-button 
             type="text" 
@@ -57,13 +61,23 @@
         </div>
         
         <div class="header-right">
-          <span class="user-info">欢迎，{{ userEmail }}</span>
-          <el-button type="danger" @click="handleLogout" size="small">退出登录</el-button>
+          <div class="user-info-wrapper">
+            <el-icon class="user-icon"><User /></el-icon>
+            <span class="user-info">欢迎，{{ userEmail }}</span>
+          </div>
+          <el-button 
+            type="danger" 
+            @click="handleLogout" 
+            size="small"
+            :icon="SwitchButton"
+          >
+            退出登录
+          </el-button>
         </div>
       </header>
       
       <!-- 页面内容 -->
-      <div class="content-area">
+      <div class="content-area" :class="{ 'no-top-header': isTripDetailPage }">
         <slot></slot>
       </div>
     </main>
@@ -71,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { 
@@ -81,7 +95,9 @@ import {
   ArrowLeft,
   Compass,
   Calendar,
-  MapLocation
+  MapLocation,
+  User,
+  SwitchButton
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -106,12 +122,22 @@ const getPageTitle = (route: any) => {
 
 const currentPageTitle = computed(() => getPageTitle(route))
 
+// 判断是否是行程详情页面
+const isTripDetailPage = computed(() => {
+  return route.path.startsWith('/trips/') && route.params.id
+})
+
 // 菜单项配置
 const menuItems = [
   { path: '/dashboard', name: '我的行程', icon: Calendar },
   { path: '/trips/create', name: '创建行程', icon: Compass },
   { path: '/map', name: '地图', icon: MapLocation }
 ]
+
+// 侧边栏切换图标
+const sidebarToggleIcon = computed(() => {
+  return isSidebarCollapsed.value ? ArrowRight : ArrowLeft
+})
 
 // 方法
 const toggleSidebar = () => {
@@ -124,6 +150,19 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// 更新 CSS 变量
+const updateSidebarWidth = () => {
+  document.documentElement.style.setProperty(
+    '--sidebar-width',
+    isSidebarCollapsed.value ? '64px' : '240px'
+  )
+}
+
+// 监听侧边栏状态变化
+watch(isSidebarCollapsed, () => {
+  updateSidebarWidth()
+})
+
 // 初始化
 onMounted(() => {
   // 从localStorage加载用户偏好
@@ -132,6 +171,9 @@ onMounted(() => {
   if (savedSidebarState === 'true') {
     isSidebarCollapsed.value = true
   }
+  
+  // 初始化 CSS 变量
+  updateSidebarWidth()
 })
 </script>
 
@@ -146,8 +188,8 @@ onMounted(() => {
 /* 侧边栏样式 */
 .sidebar {
   width: 240px;
-  background-color: var(--el-bg-color);
-  border-right: 1px solid var(--el-border-color);
+  background: linear-gradient(180deg, #f0f7ff 0%, #e6f2ff 100%); /* 浅蓝色渐变背景 */
+  border-right: 1px solid #d0e7ff; /* 浅蓝色边框 */
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
@@ -156,6 +198,7 @@ onMounted(() => {
   top: 0;
   bottom: 0;
   z-index: 1000;
+  box-shadow: 2px 0 8px rgba(64, 158, 255, 0.1); /* 添加浅蓝色阴影 */
 }
 
 .sidebar-collapsed {
@@ -164,17 +207,24 @@ onMounted(() => {
 
 .sidebar-header {
   padding: 20px 16px;
-  border-bottom: 1px solid var(--el-border-color);
+  border-bottom: 1px solid #d0e7ff; /* 浅蓝色边框 */
+  background: rgba(255, 255, 255, 0.5); /* 半透明白色背景 */
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
 }
 
 .app-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-color-primary);
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #409eff; /* 主题蓝色 */
   margin: 0;
+}
+
+.app-logo .el-icon {
+  font-size: 24px;
+  color: #409eff;
 }
 
 .sidebar-nav {
@@ -198,26 +248,50 @@ onMounted(() => {
   gap: 12px;
   padding: 12px 16px;
   text-decoration: none;
-  color: var(--el-text-color-regular);
-  border-radius: 6px;
+  color: #606266; /* 深灰色文字 */
+  border-radius: 8px;
   margin: 0 8px;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .nav-link:hover {
-  background-color: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+  background: rgba(64, 158, 255, 0.1); /* 浅蓝色背景 */
+  color: #409eff;
+  transform: translateX(4px); /* 轻微右移效果 */
 }
 
 .nav-link.active {
-  background-color: var(--el-color-primary-light-8);
-  color: var(--el-color-primary);
-  font-weight: 500;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%); /* 蓝色渐变背景 */
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3); /* 蓝色阴影 */
+}
+
+.nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #ffffff;
+  border-radius: 0 3px 3px 0;
 }
 
 .nav-icon {
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.1); /* 悬停时图标放大 */
+}
+
+.nav-link.active .nav-icon {
+  color: #ffffff;
 }
 
 .nav-text {
@@ -228,7 +302,8 @@ onMounted(() => {
 
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid var(--el-border-color);
+  border-top: 1px solid #d0e7ff; /* 浅蓝色边框 */
+  background: rgba(255, 255, 255, 0.3); /* 半透明白色背景 */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -239,6 +314,14 @@ onMounted(() => {
   width: 100%;
   justify-content: flex-start;
   padding: 8px 12px;
+  color: #606266;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(64, 158, 255, 0.1);
+  color: #409eff;
 }
 
 /* 主内容区样式 */
@@ -255,8 +338,8 @@ onMounted(() => {
 }
 
 .top-header {
-  background-color: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color);
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); /* 浅蓝色渐变背景 */
+  border-bottom: 1px solid #d0e7ff; /* 浅蓝色边框 */
   padding: 0 24px;
   height: 64px;
   display: flex;
@@ -265,6 +348,8 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 999;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.08); /* 浅蓝色阴影 */
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
 }
 
 .header-left {
@@ -280,8 +365,11 @@ onMounted(() => {
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: #303133; /* 深灰色 */
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-right {
@@ -290,15 +378,43 @@ onMounted(() => {
   gap: 16px;
 }
 
+.user-info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.6); /* 半透明白色背景 */
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.user-info-wrapper:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
+}
+
+.user-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
 .user-info {
-  color: var(--el-text-color-regular);
+  color: #606266;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .content-area {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+}
+
+/* 当隐藏 top-header 时，content-area 可以占据整个高度 */
+.content-area.no-top-header {
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow-y: visible; /* 让子页面自己控制滚动 */
 }
 
 /* 响应式设计 */
