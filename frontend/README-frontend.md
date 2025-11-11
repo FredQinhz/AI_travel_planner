@@ -42,19 +42,37 @@ npm run build
 
 构建完成后，可以在`dist`目录下找到生成的静态文件。
 
-## 项目结构
+## 项目结构（建议）
 
-```
-src/
-├── assets/             # 静态资源
-├── components/         # Vue组件
-├── views/              # 页面视图
-├── router/             # 路由配置
-├── stores/             # Pinia状态管理
-├── services/           # API服务
-├── utils/              # 工具函数
-├── App.vue             # 根组件
-└── main.ts             # 应用入口
+```bash
+frontend/
+├─ src/
+│  ├─ api/
+│  │   └─ axios.ts           # axios instance with JWT attach
+│  ├─ components/
+│  │   ├─ AuthForm.vue
+│  │   ├─ VoiceInput.vue
+│  │   ├─ TripEditor.vue
+│  │   ├─ MapView.vue
+│  │   ├─ DayPlanList.vue
+│  │   └─ ExpenseInput.vue
+│  ├─ pages/
+│  │   ├─ Login.vue
+│  │   ├─ Register.vue
+│  │   ├─ Dashboard.vue
+│  │   ├─ TripCreate.vue
+│  │   └─ TripDetail.vue
+│  ├─ stores/
+│  │   ├─ auth.ts
+│  │   ├─ trips.ts
+│  │   └─ ui.ts
+│  ├─ router/
+│  │   └─ index.ts
+│  ├─ utils/
+│  │   ├─ speech.ts         # wrappers for Web Speech + fallback
+│  │   └─ mapHelpers.ts
+│  ├─ assets/
+│  └─ App.vue, main.ts
 ```
 
 ## 路由配置
@@ -77,3 +95,8 @@ src/
 ## API集成
 
 前端通过axios与后端API进行通信，所有API调用封装在services目录下。
+
+## 小贴士和常见坑
+
+- 前端展示与提交日期时，要使用统一时区（ISO 日期字符串）。
+- 处理LLM调用延迟时，要实现clear loading + cancel 逻辑，避免重复触发。

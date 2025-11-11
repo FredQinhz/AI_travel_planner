@@ -124,7 +124,7 @@
 
 4. 外部服务
 
-   * 语音识别提供商（科大讯飞或 Web Speech API）
+   * 语音识别提供商（科大讯飞）
    * 地图服务（高德/百度）
    * LLM Provider（通义千问或其他）
 
@@ -223,9 +223,8 @@ created_at TIMESTAMP
 
    * 在后端实现 `LLMService`：接受结构化请求，调用 OpenAI / 模拟返回（在没有 key 情况下提供 mock）
    * SpeechAdapter：支持两种模式
-
      * 客户端直接使用 Web Speech API（推荐用于 MVP）
-     * 后端接收音频文件并调用科大讯飞（适配器样例）
+     * 音频处理直接在前端完成，给后端直接返回处理好的string
 
 5. 预算与费用模块
 

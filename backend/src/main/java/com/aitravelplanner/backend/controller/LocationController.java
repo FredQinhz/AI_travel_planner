@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/locations")
+@RequestMapping("/api/locations")
 public class LocationController {
 
     private final LocationService locationService;
@@ -32,7 +32,7 @@ public class LocationController {
     /**
      * 获取指定行程的所有位置
      */
-    @GetMapping("/trip/{tripId}")
+    @GetMapping("/{tripId}")
     public ResponseEntity<List<Location>> getLocationsByTripId(
             @PathVariable UUID tripId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -54,7 +54,7 @@ public class LocationController {
     /**
      * 获取指定行程某一天的位置
      */
-    @GetMapping("/trip/{tripId}/day/{day}")
+    @GetMapping("/{tripId}/day/{day}")
     public ResponseEntity<List<Location>> getLocationsByTripIdAndDay(
             @PathVariable UUID tripId,
             @PathVariable Integer day,

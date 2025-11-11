@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/trips")
+@RequestMapping("/api/expenses")
 public class ExpenseController {
 
     private final UserRepository userRepository;
@@ -28,7 +28,7 @@ public class ExpenseController {
     }
 
     // 添加单个消费记录
-    @PostMapping("/{tripId}/expenses")
+    @PostMapping("/{tripId}")
     public ResponseEntity<ExpenseResponse> addExpense(
             @PathVariable UUID tripId,
             @Valid @RequestBody Map<String, Object> expenseData,
@@ -44,7 +44,7 @@ public class ExpenseController {
     }
 
     // 批量上传多个消费记录
-    @PostMapping("/{tripId}/expenses/batch")
+    @PostMapping("/batch/{tripId}")
     public ResponseEntity<List<ExpenseResponse>> addExpensesBatch(
             @PathVariable UUID tripId,
             @Valid @RequestBody List<Map<String, Object>> expensesData,
@@ -60,7 +60,7 @@ public class ExpenseController {
     }
 
     // 更新单个消费记录 - 支持部分字段更新
-    @PutMapping("/{tripId}/expenses/{expenseId}")
+    @PutMapping("/{tripId}/expense/{expenseId}")
     public ResponseEntity<ExpenseResponse> updateExpense(
             @PathVariable UUID tripId,
             @PathVariable UUID expenseId,
@@ -76,7 +76,7 @@ public class ExpenseController {
     }
 
     // 删除单个消费记录
-    @DeleteMapping("/{tripId}/expenses/{expenseId}")
+    @DeleteMapping("/{tripId}/expense/{expenseId}")
     public ResponseEntity<Void> deleteExpense(
             @PathVariable UUID tripId,
             @PathVariable UUID expenseId,
@@ -92,7 +92,7 @@ public class ExpenseController {
     }
 
     // 查询行程的所有消费记录
-    @GetMapping("/{tripId}/expenses")
+    @GetMapping("/{tripId}")
     public ResponseEntity<List<ExpenseResponse>> getTripExpenses(
             @PathVariable UUID tripId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -106,8 +106,8 @@ public class ExpenseController {
         return ResponseEntity.ok(responses);
     }
 
-    // 查询单个消费记录详情
-    @GetMapping("/{tripId}/expenses/{expenseId}")
+    // 查询单个消费记录详情，此功能（接口）暂时不启用
+    @GetMapping("/{tripId}/expense/{expenseId}")
     public ResponseEntity<ExpenseResponse> getExpenseDetails(
             @PathVariable UUID tripId,
             @PathVariable UUID expenseId,

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/trips")
+@RequestMapping("/api/budget")
 public class BudgetController {
 
     private final BudgetService budgetService;
@@ -23,7 +23,7 @@ public class BudgetController {
         this.userRepository = userRepository;
     }
 
-    @GetMapping("/{tripId}/budget")
+    @GetMapping("/{tripId}")
     public ResponseEntity<BudgetResponse> getBudgetStatus(
             @PathVariable UUID tripId,
             @AuthenticationPrincipal UserDetails userDetails) {
