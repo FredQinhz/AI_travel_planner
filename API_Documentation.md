@@ -653,7 +653,7 @@ public class LoginRequest {
 @Data
 public class AuthResponse {
     private String token;      // JWT令牌
-    private String username;   // 用户名（邮箱）
+    private String email;   // 用户名（邮箱）
 }
 ```
 

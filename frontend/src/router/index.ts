@@ -27,7 +27,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/trips/create',
     name: 'TripCreate',
-    component: () => import('@/pages/TripCreate.vue'),
+    component: () => import('@/pages/TripCreatePage.vue'),
     meta: { requiresAuth: true }
   },
   {

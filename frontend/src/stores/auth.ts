@@ -13,13 +13,13 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   token: string;
-  username: string;
+  email: string;
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    userEmail: localStorage.getItem('userEmail') || '',
+    email: localStorage.getItem('email') || '',
     isLoading: false,
     error: ''
   }),
@@ -34,13 +34,13 @@ export const useAuthStore = defineStore('auth', {
       this.error = '';
       try {
         const response = await api.post<AuthResponse>('/auth/login', request);
-        const { token, username } = response.data;
+        const { token, email } = response.data;
         
         // 保存到状态和本地存储
         this.token = token;
-        this.userEmail = username;
+        this.email = email;
         localStorage.setItem('token', token);
-        localStorage.setItem('userEmail', username);
+        localStorage.setItem('email', email);
         
         return true;
       } catch (error: any) {
@@ -67,14 +67,14 @@ export const useAuthStore = defineStore('auth', {
 
     logout() {
       this.token = '';
-      this.userEmail = '';
+      this.email = '';
       localStorage.removeItem('token');
-      localStorage.removeItem('userEmail');
+      localStorage.removeItem('email');
     },
 
     loadFromLocal() {
       this.token = localStorage.getItem('token') || '';
-      this.userEmail = localStorage.getItem('userEmail') || '';
+      this.email = localStorage.getItem('email') || '';
     }
   }
 });

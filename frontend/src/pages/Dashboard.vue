@@ -46,7 +46,7 @@ onMounted(() => {
         <h1 class="app-title">AI Travel Planner</h1>
       </div>
       <div class="header-right">
-        <span class="user-info">欢迎，{{ authStore.userEmail }}</span>
+        <span class="user-info">欢迎，{{ authStore.email }}</span>
         <el-button type="danger" @click="handleLogout">退出登录</el-button>
       </div>
     </header>
