@@ -48,31 +48,42 @@ npm run build
 frontend/
 ├─ src/
 │  ├─ api/
-│  │   └─ axios.ts           # axios instance with JWT attach
+│  │   └─ axios.ts            # axios 实例，统一附加 JWT
+│  ├─ assets/
+│  │   └─ vue.svg
 │  ├─ components/
 │  │   ├─ AuthForm.vue
-│  │   ├─ VoiceInput.vue
-│  │   ├─ TripEditor.vue
-│  │   ├─ MapView.vue
-│  │   ├─ DayPlanList.vue
-│  │   └─ ExpenseInput.vue
+│  │   ├─ HelloWorld.vue
+│  │   ├─ TextTripForm.vue
+│  │   ├─ VoiceTripForm.vue
+│  │   ├─ layout/
+│  │   │   └─ AppLayout.vue
+│  │   └─ trip/
+│  │       ├─ DailyPlans.vue
+│  │       ├─ ExpenseManagement.vue
+│  │       └─ TripInfo.vue
 │  ├─ pages/
-│  │   ├─ Login.vue
-│  │   ├─ Register.vue
 │  │   ├─ Dashboard.vue
-│  │   ├─ TripCreate.vue
+│  │   ├─ Login.vue
+│  │   ├─ MapPage.vue
+│  │   ├─ Register.vue
+│  │   ├─ TripCreatePage.vue
 │  │   └─ TripDetail.vue
-│  ├─ stores/
-│  │   ├─ auth.ts
-│  │   ├─ trips.ts
-│  │   └─ ui.ts
 │  ├─ router/
 │  │   └─ index.ts
-│  ├─ utils/
-│  │   ├─ speech.ts         # wrappers for Web Speech + fallback
-│  │   └─ mapHelpers.ts
-│  ├─ assets/
-│  └─ App.vue, main.ts
+│  ├─ services/
+│  │   └─ MapService.ts       # 高德地图封装
+│  ├─ stores/
+│  │   ├─ auth.ts
+│  │   ├─ expenses.ts
+│  │   └─ trips.ts
+│  ├─ App.vue
+│  ├─ main.ts
+│  ├─ style.css
+│  └─ vite-env.d.ts
+├─ package.json
+├─ vite.config.ts
+└─ README-frontend.md
 ```
 
 ## 路由配置
@@ -99,4 +110,7 @@ frontend/
 ## 小贴士和常见坑
 
 - 前端展示与提交日期时，要使用统一时区（ISO 日期字符串）。
-- 处理LLM调用延迟时，要实现clear loading + cancel 逻辑，避免重复触发。
+- 处理 LLM 调用延迟时，前端已实现「提交后立即返回、后台异步生成」的交互逻辑：  
+  - 创建行程后会直接跳转到行程详情页，标题下的「每日行程安排」区域提供刷新按钮。  
+  - 若仍在生成中，刷新提示“LLM 正在处理中”；生成完成后，刷新即可看到最新的每日计划。
+- 行程详情页与地图页分离展示，如果需要查看地图，请通过「查看地图」按钮跳转独立页面。

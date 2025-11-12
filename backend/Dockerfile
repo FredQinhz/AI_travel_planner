@@ -1,19 +1,19 @@
-# 使用Maven镜像构建应用
-FROM maven:3.6.3-jdk-8 AS builder
+# === Build stage ============================================================
+FROM maven:3.9.6-eclipse-temurin-8 AS builder
 
 # 设置工作目录
 WORKDIR /app
 
 # 复制pom.xml并下载依赖
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN mvn -B dependency:go-offline
 
 # 复制源代码并构建
 COPY src/ ./src/
-RUN mvn clean package -DskipTests
+RUN mvn -B clean package -DskipTests
 
-# 使用Java运行时镜像
-FROM openjdk:8-jre-alpine
+# === Runtime stage ==========================================================
+FROM eclipse-temurin:8-jre-alpine
 
 # 设置工作目录
 WORKDIR /app

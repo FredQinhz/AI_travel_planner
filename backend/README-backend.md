@@ -42,6 +42,21 @@ DASHSCOPE_API_KEY=your_dashscope_api_key
 XFUN_API_KEY=your_xunfei_api_key
 ```
 
+> 提示：项目启动时会自动读取项目根目录下的 `.env` 文件（通过 `Application.loadEnvFile()` 实现）。  
+> 如果已配置 `.env`，无需再在系统环境变量中重复配置。`.env` 示例如下：
+>
+> ```
+> QWEN_API_KEY=sk-xxxx
+> JDBC_DATABASE_URL=jdbc:postgresql://localhost:5432/ai_travel_planner
+> JDBC_DATABASE_USERNAME=postgres
+> JDBC_DATABASE_PASSWORD=123456
+> JWT_SECRET=ThisIsASecretKeyForJwtMustBeAtLeast32Bytes!
+> JWT_EXP_MS=86400000
+> SERVER_PORT=8080
+> ```
+>
+> 系统环境变量优先级高于 `.env` 文件。
+
 ### 运行项目
 
 1. 克隆仓库
@@ -115,6 +130,12 @@ src/main/java/com/aitravelplanner/backend/
     ├── JwtUtil.java              # JWT工具类
     ├── SecurityConfig.java       # 安全配置
     └── UserDetailsServiceImpl.java # 用户详情服务实现
+
+### 异步行程生成
+
+- `TripServiceImpl#createTrip` 与 `updateTrip` 在保存行程后，会通过 `AsyncTripPlanService` 异步调用 LLM 生成每日行程；接口响应立即返回，`dayPlans` 初始为空。
+- `AsyncTripPlanService#generatePlanAsync` 使用 `@Async` 注解在后台线程执行，生成完成后将地点信息写入数据库。
+- 前端通过刷新按钮轮询最新行程，确保用户体验流畅。
 ```
 
 ## API文档
