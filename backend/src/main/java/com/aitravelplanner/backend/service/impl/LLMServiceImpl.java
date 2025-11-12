@@ -72,7 +72,8 @@ public class LLMServiceImpl implements LLMService {
                "1. 生成 dayPlans 数组，每天包含多个 location\n" +
                "2. location 必须包含 name, lng, lat, description, type\n" +
                "3. 只返回 JSON，不要包含 markdown 或额外解释\n" +
-               "4. 必须严格按格式返回\n\n" +
+               "4. 务必做到 location 的经纬度信息准确\n" +
+               "5. 必须严格按格式返回\n\n" +
                "你必须返回如下结构：\n" +
                "{\n" +
                "  \"dayPlans\": [\n" +

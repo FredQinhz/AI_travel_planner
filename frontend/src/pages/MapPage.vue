@@ -82,6 +82,8 @@
           <el-icon><MapLocation /></el-icon>
           <span>路线规划</span>
         </div>
+        <!-- 路线类型选择器已隐藏，默认使用驾车模式 -->
+        <!--
         <el-radio-group v-model="routeType" class="route-type-selector">
           <el-radio-button label="driving">
             <el-icon><Location /></el-icon>
@@ -96,6 +98,7 @@
             <span>步行</span>
           </el-radio-button>
         </el-radio-group>
+        -->
         <el-button
           type="primary"
           :icon="MapLocation"
@@ -194,14 +197,38 @@ const getLocationTypeName = (type: string): string => {
 
 // 初始化地图
 const initMap = async () => {
-  if (!mapService) {
-    mapService = new MapService();
+  // 如果已有地图服务，先销毁
+  if (mapService) {
+    try {
+      mapService.destroy();
+    } catch (error) {
+      console.warn('清理旧地图时出错:', error);
+    }
+    mapService = null;
   }
 
+  mapService = new MapService();
   mapLoading.value = true;
+  
   try {
     // 等待 DOM 更新，确保容器已渲染
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // 检查容器是否存在
+    const container = document.getElementById('amap-container');
+    if (!container) {
+      throw new Error('地图容器不存在');
+    }
+    
+    // 确保容器有正确的尺寸
+    const containerWidth = container.offsetWidth || container.clientWidth;
+    const containerHeight = container.offsetHeight || container.clientHeight;
+    
+    if (containerWidth === 0 || containerHeight === 0) {
+      console.warn('地图容器尺寸为0，等待容器渲染...');
+      // 再等待一段时间
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
     // 默认中心点（北京天安门）
     const defaultCenter = { lng: 116.397428, lat: 39.90923 };
@@ -228,16 +255,30 @@ const initMap = async () => {
     setTimeout(() => {
       if (mapService) {
         mapService.resize();
-        const map = mapService.getMap();
-        if (map) {
-          // 强制触发地图尺寸重新计算
-          map.getSize();
-        }
+        // 再次调整，确保地图正确显示
+        setTimeout(() => {
+          if (mapService) {
+            mapService.resize();
+          }
+        }, 300);
       }
-    }, 300);
-  } catch (error) {
+    }, 500);
+  } catch (error: any) {
     console.error('地图初始化失败:', error);
-    ElMessage.error('地图加载失败，请检查网络连接和高德地图API Key配置');
+    // 只有在真正的错误时才显示错误消息
+    const errorMessage = error?.message || '未知错误';
+    // 如果是控件初始化错误，不显示错误消息（因为地图已经加载成功）
+    if (errorMessage.includes('Zoom is not a constructor') || 
+        errorMessage.includes('Scale is not a constructor') || 
+        errorMessage.includes('ToolBar is not a constructor')) {
+      console.warn('控件初始化失败，但地图已成功加载');
+      // 不显示错误消息，因为地图本身已经加载成功
+    } else if (errorMessage.includes('容器') || errorMessage.includes('不存在')) {
+      // 不显示错误，因为可能是组件已卸载
+      console.warn('地图容器未找到，可能组件已卸载');
+    } else {
+      ElMessage.error('地图加载失败：' + errorMessage);
+    }
   } finally {
     mapLoading.value = false;
   }
@@ -246,36 +287,40 @@ const initMap = async () => {
 // 更新标记
 const updateMarkers = () => {
   if (!mapService) return;
+  
+  try {
+    // 清除旧标记
+    mapService.clearMarkers();
+    locationMarkers.value = [];
 
-  // 清除旧标记
-  mapService.clearMarkers();
-  locationMarkers.value = [];
+    // 添加新标记
+    currentDayLocations.value.forEach((location, index) => {
+      const isHighlighted = index === selectedLocationIndex.value;
+      const marker = mapService!.addMarker(
+        {
+          name: location.name,
+          lat: location.lat,
+          lng: location.lng,
+          type: location.type,
+          description: location.description
+        },
+        undefined,
+        isHighlighted
+      );
+      if (marker) {
+        locationMarkers.value.push(marker);
+      }
+    });
 
-  // 添加新标记
-  currentDayLocations.value.forEach((location, index) => {
-    const isHighlighted = index === selectedLocationIndex.value;
-    const marker = mapService!.addMarker(
-      {
-        name: location.name,
-        lat: location.lat,
-        lng: location.lng,
-        type: location.type,
-        description: location.description
-      },
-      undefined,
-      isHighlighted
-    );
-    if (marker) {
-      locationMarkers.value.push(marker);
+    // 如果有地点，调整地图视野
+    if (currentDayLocations.value.length > 0) {
+      const map = mapService.getMap();
+      if (map && locationMarkers.value.length > 0) {
+        map.setFitView(locationMarkers.value, false, [50, 50, 50, 50]);
+      }
     }
-  });
-
-  // 如果有地点，调整地图视野
-  if (currentDayLocations.value.length > 0) {
-    const map = mapService.getMap();
-    if (map && locationMarkers.value.length > 0) {
-      map.setFitView(locationMarkers.value, false, [50, 50, 50, 50]);
-    }
+  } catch (error) {
+    console.warn('更新标记时出错:', error);
   }
 };
 
@@ -363,10 +408,17 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // 清理地图服务
   if (mapService) {
-    mapService.destroy();
+    try {
+      mapService.destroy();
+    } catch (error) {
+      console.warn('地图销毁时出错:', error);
+    }
     mapService = null;
   }
+  // 清理标记引用
+  locationMarkers.value = [];
 });
 
 // 监听地点变化，更新标记
@@ -382,9 +434,11 @@ watch(currentDayLocations, () => {
   display: flex;
   height: 100%; /* 占据父容器（content-area）的全部高度 */
   width: 100%; /* 占据父容器的全部宽度 */
+  max-width: 100%;
   background: #f5f7fa;
   overflow: hidden;
   position: relative;
+  box-sizing: border-box;
 }
 
 /* 侧边栏样式 */
@@ -609,12 +663,16 @@ watch(currentDayLocations, () => {
   background: #e4e7ed;
   min-width: 0; /* 允许 flex 子元素缩小 */
   overflow: hidden;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .amap-container {
   width: 100% !important;
   height: 100% !important;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .map-loading {

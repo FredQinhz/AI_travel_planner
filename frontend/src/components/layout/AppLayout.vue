@@ -336,10 +336,13 @@ onMounted(() => {
   transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
+  width: calc(100% - 240px);
+  min-width: 0;
 }
 
 .main-content.sidebar-collapsed {
   margin-left: 64px;
+  width: calc(100% - 64px);
 }
 
 .top-header {
@@ -413,6 +416,9 @@ onMounted(() => {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* 当隐藏 top-header 时，content-area 可以占据整个高度 */
@@ -424,9 +430,13 @@ onMounted(() => {
 
 /* 地图页面样式 - 移除所有 padding，让地图占据整个空间 */
 .content-area.map-page {
-  padding: 0;
-  overflow: hidden; /* 让地图页面自己控制滚动 */
-  height: calc(100vh - 64px); /* 减去顶部栏高度 */
+  padding: 0 !important;
+  overflow: hidden !important; /* 让地图页面自己控制滚动 */
+  height: calc(100vh - 64px) !important; /* 减去顶部栏高度 */
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 /* 响应式设计 */

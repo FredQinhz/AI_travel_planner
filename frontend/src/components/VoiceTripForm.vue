@@ -733,7 +733,7 @@ const handleCreateTrip = async () => {
       } else {
         ElMessage.error(tripsStore.error || '行程创建失败');
       }
-    }, 25000);
+    }, 30000);
   } catch (error) {
     showLoadingOverlay.value = false;
     ElMessage.error('创建行程时发生错误');
