@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
+@Primary
 @Slf4j
 public class LLMServiceImpl implements LLMService {
 

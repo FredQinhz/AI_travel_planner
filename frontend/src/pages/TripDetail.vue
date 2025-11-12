@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTripsStore } from '@/stores/trips';
 import { ElButton, ElCard, ElSelect, ElOption, ElEmpty } from 'element-plus';
 import { ArrowLeft, MapLocation } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 import TripInfo from '@/components/trip/TripInfo.vue';
 import DailyPlans from '@/components/trip/DailyPlans.vue';
 import ExpenseManagement from '@/components/trip/ExpenseManagement.vue';
@@ -13,6 +14,7 @@ const router = useRouter();
 const tripsStore = useTripsStore();
 
 const loading = ref(true);
+const refreshing = ref(false);
 
 // 从路由参数中获取行程ID
 const tripId = computed(() => route.params.id as string);
@@ -28,7 +30,7 @@ const viewOptions = [
 ];
 
 // 加载行程详情
-const loadTripDetail = async () => {
+const loadTripDetail = async (showMessage = false) => {
   if (!tripId.value) return;
   
   loading.value = true;
@@ -37,12 +39,35 @@ const loadTripDetail = async () => {
     if (!trip) {
       // 如果行程不存在，返回仪表盘
       router.push('/dashboard');
+    } else if (showMessage) {
+      // 检查是否有行程计划
+      if (trip.dayPlans && trip.dayPlans.length > 0) {
+        ElMessage.success('行程计划已更新！');
+      } else {
+        ElMessage.info('LLM正在处理中，请稍后再试');
+      }
     }
   } catch (error) {
     console.error('加载行程详情失败:', error);
-    router.push('/dashboard');
+    if (showMessage) {
+      ElMessage.error('刷新失败，请稍后再试');
+    } else {
+      router.push('/dashboard');
+    }
   } finally {
     loading.value = false;
+  }
+};
+
+// 刷新行程详情
+const refreshTripDetail = async () => {
+  if (!tripId.value || refreshing.value) return;
+  
+  refreshing.value = true;
+  try {
+    await loadTripDetail(true);
+  } finally {
+    refreshing.value = false;
   }
 };
 
@@ -122,7 +147,11 @@ onMounted(() => {
           <div class="view-content">
             <!-- 每日旅行计划 -->
             <div v-if="currentView === 'plans'" class="view-panel">
-              <DailyPlans :day-plans="currentTrip.dayPlans || []" />
+              <DailyPlans 
+                :day-plans="currentTrip.dayPlans || []" 
+                :refreshing="refreshing"
+                @refresh="refreshTripDetail"
+              />
             </div>
 
             <!-- 行程支出 -->

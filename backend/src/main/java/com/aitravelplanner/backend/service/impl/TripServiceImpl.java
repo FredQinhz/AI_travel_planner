@@ -6,31 +6,34 @@ import com.aitravelplanner.backend.model.Trip;
 import com.aitravelplanner.backend.model.User;
 import com.aitravelplanner.backend.repository.TripRepository;
 import com.aitravelplanner.backend.repository.ExpenseRepository;
-import com.aitravelplanner.backend.service.LLMService;
 import com.aitravelplanner.backend.service.LocationService;
 import com.aitravelplanner.backend.service.ExpenseService;
 import com.aitravelplanner.backend.service.TripService;
+import com.aitravelplanner.backend.service.AsyncTripPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
 @Service
+@Slf4j
 public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
-    private final LLMService llmService;
+    private final AsyncTripPlanService asyncTripPlanService;
     private final LocationService locationService;
     private final ExpenseService expenseService;
     private final ExpenseRepository expenseRepository;
 
     @Autowired
-    public TripServiceImpl(TripRepository tripRepository, LLMServiceImpl llmServiceImpl, LocationService locationService, ExpenseService expenseService, ExpenseRepository expenseRepository) {
+    public TripServiceImpl(TripRepository tripRepository, AsyncTripPlanService asyncTripPlanService, LocationService locationService, ExpenseService expenseService, ExpenseRepository expenseRepository) {
         this.tripRepository = tripRepository;
-        this.llmService = llmServiceImpl;
+        this.asyncTripPlanService = asyncTripPlanService;
         this.locationService = locationService;
         this.expenseService = expenseService;
         this.expenseRepository = expenseRepository;
@@ -59,12 +62,12 @@ public class TripServiceImpl implements TripService {
 
         Trip savedTrip = tripRepository.save(trip);
         
-        // 调用LLMService生成行程计划
-        List<DayPlanDTO> dayPlans = llmService.generatePlan(savedTrip);
+        // 异步调用LLMService生成行程计划（不阻塞响应）
+        // 通过独立的异步服务类调用，确保@Async注解生效
+        asyncTripPlanService.generatePlanAsync(savedTrip);
         
-        // 保存位置信息到数据库
-        locationService.saveLocations(savedTrip, dayPlans);
-        
+        // 立即返回响应，不等待LLM处理完成
+        // dayPlans字段会是空的，但前端会提示用户稍后查看
         return convertToResponse(savedTrip);
     }
 
@@ -119,12 +122,10 @@ public class TripServiceImpl implements TripService {
 
         Trip updatedTrip = tripRepository.save(trip);
         
-        // 调用LLMService重新生成行程计划
-        List<DayPlanDTO> dayPlans = llmService.generatePlan(updatedTrip);
+        // 异步调用LLMService重新生成行程计划（不阻塞响应）
+        asyncTripPlanService.generatePlanAsync(updatedTrip);
         
-        // 保存位置信息到数据库
-        locationService.saveLocations(updatedTrip, dayPlans);
-        
+        // 立即返回响应，不等待LLM处理完成
         return convertToResponse(updatedTrip);
     }
 

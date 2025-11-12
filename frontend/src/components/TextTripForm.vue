@@ -72,7 +72,6 @@ const rules = {
 
 const loading = ref(false);
 const formRef = ref();
-const showLoadingOverlay = ref(false);
 
 const handleCreate = async () => {
   if (!formRef.value) return;
@@ -80,32 +79,33 @@ const handleCreate = async () => {
   try {
     await formRef.value.validate();
     loading.value = true;
-    showLoadingOverlay.value = true;
     
     const tripRequest: TripRequest = {
       ...form.value
     };
     
+    // 调用创建行程API（后端会立即返回，LLM处理在后台异步进行）
     const trip = await tripsStore.createTrip(tripRequest);
     
-    // 短暂延迟后关闭遮罩并显示成功消息，然后跳转到dashboard
-    setTimeout(() => {
-      showLoadingOverlay.value = false;
-      if (trip) {
-        ElMessage.success('旅行计划已生成');
-        // 自动跳转到dashboard页面并刷新
-        router.push('/dashboard').then(() => {
-          window.location.reload();
-        });
-      } else {
-        ElMessage.error(tripsStore.error || '行程创建失败');
-      }
-    }, 30000);
-  } catch (error) {
-    showLoadingOverlay.value = false;
-    // 表单验证失败
-  } finally {
+    // 立即关闭loading状态
     loading.value = false;
+    
+    if (trip) {
+      // 显示成功消息，提示用户LLM正在后台处理
+      ElMessage.success({
+        message: '行程已创建成功！LLM正在后台处理行程规划，请稍后查看行程详情页。',
+        duration: 5000,
+        showClose: true
+      });
+      
+      // 跳转到行程详情页
+      router.push(`/trips/${trip.id}`);
+    } else {
+      ElMessage.error(tripsStore.error || '行程创建失败');
+    }
+  } catch (error) {
+    loading.value = false;
+    // 表单验证失败
   }
 };
 
@@ -212,16 +212,6 @@ const clearForm = () => {
     </el-form-item>
   </el-form>
   
-  <!-- 全屏灰色遮罩 -->
-  <div 
-    v-if="showLoadingOverlay" 
-    class="loading-overlay"
-  >
-    <div class="loading-content">
-      <el-spinner size="large" />
-      <p class="loading-text">正在生成旅行计划...</p>
-    </div>
-  </div>
 </template>
 
 <style scoped>
@@ -246,27 +236,4 @@ const clearForm = () => {
   padding-left: 0 !important;
 }
 
-/* 全屏灰色遮罩样式 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.loading-content {
-  text-align: center;
-  color: white;
-}
-
-.loading-text {
-  margin-top: 16px;
-  font-size: 16px;
-}
 </style>

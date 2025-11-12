@@ -222,7 +222,6 @@ const tripDefaults = reactive({
 
 // 加载状态
 const loading = ref(false);
-const showLoadingOverlay = ref(false);
 
 // 智能提取行程信息（增强版本）
 const extractTripInfoFromText = (text: string) => {
@@ -341,24 +340,26 @@ const extractTripInfoFromText = (text: string) => {
   }
   
   // 2. 提取时间信息 - 增强的时间识别
-  // 具体日期格式匹配
+  // 具体日期格式匹配（优化：支持"年"后有无空格的情况）
+  // 使用 \s* 来匹配可选的空格，使模式更加灵活
   const datePatterns = [
-    // 完整日期格式：从2025年12月1日到12月3日
-    /从(\d{4})年(\d{1,2})月(\d{1,2})[日号][到至](\d{4})年(\d{1,2})月(\d{1,2})[日号]/g,
-    /从(\d{4})年(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
+    // 完整日期格式：从2025年12月1日到12月3日（支持"年"后有无空格）
+    /从(\d{4})年\s*(\d{1,2})月(\d{1,2})[日号][到至](\d{4})年\s*(\d{1,2})月(\d{1,2})[日号]/g,
+    /从(\d{4})年\s*(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
     /从(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
     
-    // 完整日期格式：2025年12月1日到12月3日（支持日和号）- 按优先级排序
-    // 1. 同一年份的日期范围：2025年12月1日到12月5日（最常见）
-    /(\d{4})年(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
+    // 完整日期格式：2025年12月1日到12月3日（支持"年"后有无空格）- 按优先级排序
+    // 1. 同一年份的日期范围：2025年12月1日到12月5日（最常见，支持"2025年12月1日"和"2025年 12月1日"）
+    /(\d{4})年\s*(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
     
     // 2. 完整年份范围：2025年12月1日到2026年12月5日（较少见）
-    /(\d{4})年(\d{1,2})月(\d{1,2})[日号][到至](\d{4})年(\d{1,2})月(\d{1,2})[日号]/g,
+    /(\d{4})年\s*(\d{1,2})月(\d{1,2})[日号][到至](\d{4})年\s*(\d{1,2})月(\d{1,2})[日号]/g,
     
     // 3. 无年份的月份日期范围：12月1日到12月5日
     /(\d{1,2})月(\d{1,2})[日号][到至](\d{1,2})月(\d{1,2})[日号]/g,
     
-    // 单个日期格式
+    // 单个日期格式（支持"年"后有无空格）
+    /(\d{4})年\s*(\d{1,2})月(\d{1,2})[日号]/g, // 2025年12月1日 或 2025年 12月1日
     /(\d{4})[年.-](\d{1,2})[月.-](\d{1,2})[日号]?/g, // 2024-01-15
     /(\d{1,2})[月.-](\d{1,2})[日号]?/g, // 1月15日
     /下[周星期](\d)/g, // 下周1
@@ -396,27 +397,57 @@ const extractTripInfoFromText = (text: string) => {
     return 0;
   };
   
-  // 天数匹配 - 支持中文数字
+  // 天数匹配 - 支持中文数字（优化：支持"X天的旅程"、"X天旅程"等多种表达）
+  // 注意：将"完成一场六天的旅程"模式放在前面，优先匹配
   const dayPatterns = [
+    /完成(?:一场|一个)?([零一二三四五六七八九十百千万亿]+|[\d]+)天(?:的(?:旅程|旅行|行程|游)?|旅程|旅行|行程|游)?/g, // 完成一场六天的旅程（优先，支持"的旅程"）
     /([零一二三四五六七八九十百千万亿]+|[\d]+)[-到至]([零一二三四五六七八九十百千万亿]+|[\d]+)天/g, // 三-五天 或 3-5天
-    /([零一二三四五六七八九十百千万亿]+|[\d]+)天/g, // 三天 或 3天
+    /([零一二三四五六七八九十百千万亿]+|[\d]+)天(?:的(?:旅程|旅行|行程|游)?|旅程|旅行|行程|游)?/g, // 六天、六天的、六天的旅程、六天旅程、六天旅行、六天行程、六天游
     /([零一二三四五六七八九十百千万亿]+|[\d]+)日游/g, // 三日游 或 3日游
     /玩([零一二三四五六七八九十百千万亿]+|[\d]+)天/g, // 玩三天 或 玩3天
+    /([零一二三四五六七八九十百千万亿]+|[\d]+)天的旅程/g, // 六天的旅程（更精确的匹配）
   ];
   
-  // 处理具体日期信息
+  // 处理具体日期信息（优化后的简洁逻辑）
   for (const pattern of datePatterns) {
     const matches = [...text.matchAll(pattern)];
     if (matches.length > 0) {
       const match = matches[0];
+      if (!match) continue;
       
-      // 处理完整日期范围：2025年12月1日到12月3日（有年份）
-      if (match.length >= 7) {
-        const startYear = match[1] ? parseInt(match[1]) : new Date().getFullYear();
-        const startMonth = parseInt(match[2]) - 1; // 月份从0开始
+      const currentYear = new Date().getFullYear();
+      const captureCount = match.length - 1; // match[0] 是完整匹配，后续是捕获组
+      
+      // 情况1: 完整日期范围（5个捕获组）：2025年12月1日到12月20日 或 2025年 12月1日到12月20日
+      // match[1]=年份, match[2]=开始月, match[3]=开始日, match[4]=结束月, match[5]=结束日
+      if (captureCount === 5 && match[1] && match[2] && match[3] && match[4] && match[5]) {
+        const startYear = parseInt(match[1]);
+        const startMonth = parseInt(match[2]) - 1;
         const startDay = parseInt(match[3]);
+        const endMonth = parseInt(match[4]) - 1;
+        const endDay = parseInt(match[5]);
         
-        const endYear = match[4] ? parseInt(match[4]) : startYear;
+        const startDate = new Date(startYear, startMonth, startDay);
+        const endDate = new Date(startYear, endMonth, endDay);
+        
+        // 如果结束月份小于开始月份，说明跨年了
+        if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
+          endDate.setFullYear(startYear + 1);
+        }
+        
+        extractedInfo.startDate = formatDate(startDate);
+        extractedInfo.endDate = formatDate(endDate);
+        extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        break;
+      }
+      
+      // 情况2: 跨年日期范围（6个捕获组）：2025年12月1日到2026年1月5日
+      // match[1]=开始年, match[2]=开始月, match[3]=开始日, match[4]=结束年, match[5]=结束月, match[6]=结束日
+      if (captureCount === 6 && match[1] && match[2] && match[3] && match[4] && match[5] && match[6]) {
+        const startYear = parseInt(match[1]);
+        const startMonth = parseInt(match[2]) - 1;
+        const startDay = parseInt(match[3]);
+        const endYear = parseInt(match[4]);
         const endMonth = parseInt(match[5]) - 1;
         const endDay = parseInt(match[6]);
         
@@ -429,9 +460,9 @@ const extractTripInfoFromText = (text: string) => {
         break;
       }
       
-      // 处理月份日期范围：从12月15日到12月18日（无年份）
-      if (match[1] && match[2] && match[3] && match[4]) {
-        const currentYear = new Date().getFullYear();
+      // 情况3: 无年份的月份日期范围（4个捕获组）：12月1日到12月20日
+      // match[1]=开始月, match[2]=开始日, match[3]=结束月, match[4]=结束日
+      if (captureCount === 4 && match[1] && match[2] && match[3] && match[4] && !match[1].match(/^\d{4}$/)) {
         const startMonth = parseInt(match[1]) - 1;
         const startDay = parseInt(match[2]);
         const endMonth = parseInt(match[3]) - 1;
@@ -441,7 +472,7 @@ const extractTripInfoFromText = (text: string) => {
         const endDate = new Date(currentYear, endMonth, endDay);
         
         // 如果结束月份小于开始月份，说明跨年了
-        if (endMonth < startMonth) {
+        if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
           endDate.setFullYear(currentYear + 1);
         }
         
@@ -451,78 +482,148 @@ const extractTripInfoFromText = (text: string) => {
         break;
       }
       
-      // 处理单个日期（有年份）
-      if (match[1] && match[2] && match[3]) {
-        const year = match[1] ? parseInt(match[1]) : new Date().getFullYear();
+      // 情况4: 单个日期（有年份，3个捕获组）：2025年12月1日 或 2025年 12月1日
+      // match[1]=年份, match[2]=月, match[3]=日
+      if (captureCount === 3 && match[1] && match[2] && match[3] && match[1].match(/^\d{4}$/)) {
+        const year = parseInt(match[1]);
         const month = parseInt(match[2]) - 1;
         const day = parseInt(match[3]);
         const date = new Date(year, month, day);
         
-        // 如果是开始日期，设置开始日期
         if (!extractedInfo.startDate) {
           extractedInfo.startDate = formatDate(date);
-        } else {
-          // 如果是结束日期，设置结束日期
+        } else if (!extractedInfo.endDate) {
           extractedInfo.endDate = formatDate(date);
-          if (extractedInfo.startDate) {
-            const startDate = new Date(extractedInfo.startDate);
-            extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          }
+          const startDate = new Date(extractedInfo.startDate);
+          extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         }
+        // 如果已经有开始和结束日期，跳过
+        continue;
       }
       
-      // 处理单个日期（无年份）
-      if (match[1] && match[2] && !match[3]) {
-        const year = new Date().getFullYear();
+      // 情况5: 单个日期（无年份，2个捕获组）：12月1日
+      // match[1]=月, match[2]=日
+      if (captureCount === 2 && match[1] && match[2] && !match[1].match(/^\d{4}$/)) {
         const month = parseInt(match[1]) - 1;
         const day = parseInt(match[2]);
-        const date = new Date(year, month, day);
+        const date = new Date(currentYear, month, day);
         
-        // 如果是开始日期，设置开始日期
         if (!extractedInfo.startDate) {
           extractedInfo.startDate = formatDate(date);
-        } else {
-          // 如果是结束日期，设置结束日期
+        } else if (!extractedInfo.endDate) {
           extractedInfo.endDate = formatDate(date);
-          if (extractedInfo.startDate) {
-            const startDate = new Date(extractedInfo.startDate);
-            extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          }
+          const startDate = new Date(extractedInfo.startDate);
+          extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         }
+        // 如果已经有开始和结束日期，跳过
+        continue;
       }
     }
   }
   
-  // 处理天数信息（如果没有找到具体日期）
-  if (!extractedInfo.startDate || !extractedInfo.endDate) {
-    for (const pattern of dayPatterns) {
+  // 处理天数信息（如果没有找到完整日期范围，但有开始日期或没有日期，则尝试提取天数）
+  // 注意：即使有开始日期但没有结束日期，也应该提取天数来计算结束日期
+  if (!extractedInfo.endDate) {
+    console.log('开始提取天数信息，当前状态：', {
+      startDate: extractedInfo.startDate,
+      endDate: extractedInfo.endDate,
+      days: extractedInfo.days,
+      text: text.substring(0, 100) // 只显示前100个字符
+    });
+    
+    for (let i = 0; i < dayPatterns.length; i++) {
+      const pattern = dayPatterns[i];
+      if (!pattern) continue;
       const matches = [...text.matchAll(pattern)];
+      console.log(`尝试模式 ${i + 1}:`, pattern, '匹配结果:', matches.length);
+      
       if (matches.length > 0) {
-        let startDays, endDays;
+        let startDays: number | undefined, endDays: number | undefined;
+        const match = matches[0];
+        if (!match) {
+          console.log('匹配结果为空，跳过');
+          continue;
+        }
+        
+        console.log('匹配成功:', {
+          fullMatch: match[0],
+          capture1: match[1],
+          capture2: match[2],
+          allCaptures: match
+        });
+        
+        // 确定捕获组的索引（有些模式可能有不同的捕获组位置）
+        // 对于"完成一场六天的旅程"这种模式，捕获组在 match[1]，值是"六"
+        // 对于"六天"这种模式，捕获组也在 match[1]，值是"六"
+        // 对于"玩三天"这种模式，捕获组在 match[1]，值是"三"
+        // 对于范围"三-五天"，match[1]是"三"，match[2]是"五"
+        let dayValue: string | undefined;
+        
+        // 优先使用第一个捕获组
+        if (match[1]) {
+          dayValue = match[1];
+          console.log('使用捕获组1:', dayValue);
+        } else if (match[0]) {
+          // 如果没有捕获组，从完整匹配中提取数字
+          const numMatch = match[0].match(/([零一二三四五六七八九十百千万亿]+|[\d]+)/);
+          dayValue = numMatch ? numMatch[1] : undefined;
+          console.log('从完整匹配中提取:', dayValue);
+        }
+        
+        if (!dayValue) {
+          console.log('无法提取天数值，跳过');
+          continue;
+        }
         
         // 处理中文数字或阿拉伯数字
-        if (/[零一二三四五六七八九十百千万亿]/.test(matches[0][1])) {
-          startDays = chineseToNumber(matches[0][1]);
+        if (/[零一二三四五六七八九十百千万亿]/.test(dayValue)) {
+          startDays = chineseToNumber(dayValue);
+          console.log(`中文数字转换：${dayValue} -> ${startDays}`);
         } else {
-          startDays = parseInt(matches[0][1]);
+          // 阿拉伯数字
+          startDays = parseInt(dayValue, 10);
+          if (isNaN(startDays)) {
+            startDays = undefined;
+            console.log('无法解析为数字:', dayValue);
+          } else {
+            console.log(`阿拉伯数字解析：${dayValue} -> ${startDays}`);
+          }
         }
         
-        if (matches[0][2]) {
-          if (/[零一二三四五六七八九十百千万亿]/.test(matches[0][2])) {
-            endDays = chineseToNumber(matches[0][2]);
+        // 处理范围天数（如"三-五天"）
+        if (match[2]) {
+          if (/[零一二三四五六七八九十百千万亿]/.test(match[2])) {
+            endDays = chineseToNumber(match[2]);
           } else {
-            endDays = parseInt(matches[0][2]);
+            endDays = parseInt(match[2], 10);
+            if (isNaN(endDays)) {
+              endDays = undefined;
+            }
           }
           // 范围天数，取平均值
-          extractedInfo.days = Math.round((startDays + endDays) / 2);
-        } else {
+          if (startDays !== undefined && endDays !== undefined) {
+            extractedInfo.days = Math.round((startDays + endDays) / 2);
+            console.log(`范围天数：${startDays}-${endDays} -> ${extractedInfo.days}天`);
+          }
+        } else if (startDays !== undefined && startDays > 0) {
           extractedInfo.days = startDays;
+          console.log(`单一天数：${startDays}天`);
         }
         
-        console.log(`天数识别：${matches[0][0]} -> ${extractedInfo.days}天`);
-        break;
+        if (extractedInfo.days > 0) {
+          console.log(`天数识别成功：${match[0]} -> ${extractedInfo.days}天`);
+          break;
+        } else {
+          console.log('天数识别失败：startDays =', startDays);
+        }
       }
     }
+    
+    console.log('天数提取完成，最终结果：', {
+      days: extractedInfo.days,
+      startDate: extractedInfo.startDate,
+      endDate: extractedInfo.endDate
+    });
   }
   
   // 3. 提取预算信息 - 增强的预算识别（支持中文数字）
@@ -708,7 +809,6 @@ const handleCreateTrip = async () => {
   
   try {
     loading.value = true;
-    showLoadingOverlay.value = true;
     
     // 构建行程请求对象
     const tripRequest: TripRequest = {
@@ -716,29 +816,28 @@ const handleCreateTrip = async () => {
       request: voiceText.value // 将输入文本作为原始请求
     };
     
-    // 调用创建行程API
+    // 调用创建行程API（后端会立即返回，LLM处理在后台异步进行）
     const trip = await tripsStore.createTrip(tripRequest);
     
-    // 不再需要进度条，直接等待后端返回
-    
-    // 短暂延迟后关闭遮罩并显示成功消息，然后跳转到dashboard
-    setTimeout(() => {
-      showLoadingOverlay.value = false;
-      if (trip) {
-        ElMessage.success('旅行计划已生成');
-        // 自动跳转到dashboard页面并刷新
-        router.push('/dashboard').then(() => {
-          window.location.reload();
-        });
-      } else {
-        ElMessage.error(tripsStore.error || '行程创建失败');
-      }
-    }, 30000);
-  } catch (error) {
-    showLoadingOverlay.value = false;
-    ElMessage.error('创建行程时发生错误');
-  } finally {
+    // 立即关闭loading状态
     loading.value = false;
+    
+    if (trip) {
+      // 显示成功消息，提示用户LLM正在后台处理
+      ElMessage.success({
+        message: '行程已创建成功！LLM正在后台处理行程规划，请稍后查看行程详情页。',
+        duration: 5000,
+        showClose: true
+      });
+      
+      // 跳转到行程详情页
+      router.push(`/trips/${trip.id}`);
+    } else {
+      ElMessage.error(tripsStore.error || '行程创建失败');
+    }
+  } catch (error) {
+    loading.value = false;
+    ElMessage.error('创建行程时发生错误');
   }
 };
 </script>
@@ -953,43 +1052,9 @@ const handleCreateTrip = async () => {
     </div>
   </div>
   
-  <!-- 全屏灰色遮罩 -->
-  <div 
-    v-if="showLoadingOverlay" 
-    class="loading-overlay"
-  >
-    <div class="loading-content">
-      <el-spinner size="large" />
-      <p class="loading-text">正在生成旅行计划...</p>
-    </div>
-  </div>
 </template>
 
 <style scoped>
-/* 全屏灰色遮罩样式 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.loading-content {
-  text-align: center;
-  color: white;
-}
-
-.loading-text {
-  margin-top: 16px;
-  font-size: 16px;
-}
-
 .voice-input-container {
   width: 100%;
   max-width: 800px;

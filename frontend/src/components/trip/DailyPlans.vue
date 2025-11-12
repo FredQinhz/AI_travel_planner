@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ElCard, ElTabs, ElTabPane, ElTag, ElEmpty } from 'element-plus';
+import { ElCard, ElTabs, ElTabPane, ElTag, ElEmpty, ElButton } from 'element-plus';
+import { Refresh } from '@element-plus/icons-vue';
 import type { DayPlanDTO, LocationDTO } from '@/stores/trips';
 
 interface Props {
   dayPlans: DayPlanDTO[];
+  refreshing?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  refreshing: false
+});
+
+const emit = defineEmits<{
+  refresh: [];
+}>();
 
 const activeDay = ref('1');
 
@@ -41,6 +49,17 @@ const getLocationTypeName = (type: string) => {
     <template #header>
       <div class="card-header">
         <h2 class="card-title">每日行程安排</h2>
+        <el-button 
+          class="refresh-button" 
+          type="primary" 
+          :icon="Refresh"
+          :loading="refreshing"
+          @click="emit('refresh')"
+          circle
+          size="small"
+          :title="'刷新行程计划'"
+        >
+        </el-button>
       </div>
     </template>
     
@@ -103,6 +122,7 @@ const getLocationTypeName = (type: string) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .card-title {
@@ -110,6 +130,18 @@ const getLocationTypeName = (type: string) => {
   font-size: 18px;
   font-weight: 600;
   color: #303133;
+  flex: 1;
+}
+
+.refresh-button {
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.refresh-button:hover {
+  transform: rotate(180deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .day-tabs {

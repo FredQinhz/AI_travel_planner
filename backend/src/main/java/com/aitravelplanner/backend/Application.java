@@ -2,6 +2,7 @@ package com.aitravelplanner.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +15,7 @@ import java.nio.file.Paths;
  * 这是Spring Boot应用的入口类
  */
 @SpringBootApplication
+@EnableAsync
 public class Application {
 
     public static void main(String[] args) {
