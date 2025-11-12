@@ -54,12 +54,13 @@ const goBack = () => {
 // 跳转到地图页面
 const goToMap = () => {
   if (currentTrip.value) {
-    // 传递行程信息到地图页面
+    // 传递行程信息到地图页面，并保存当前路径用于返回
     router.push({
       path: '/map',
       query: {
         tripId: currentTrip.value.id,
-        tripTitle: currentTrip.value.title
+        tripTitle: currentTrip.value.title,
+        returnPath: route.fullPath // 保存当前完整路径用于返回
       }
     });
   }

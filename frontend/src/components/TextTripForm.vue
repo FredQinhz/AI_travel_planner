@@ -227,6 +227,8 @@ const clearForm = () => {
 <style scoped>
 .trip-create-form {
   padding: 20px 0;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 /* 按钮居中 - 强制覆盖Element Plus默认样式 */

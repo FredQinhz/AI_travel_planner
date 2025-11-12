@@ -345,7 +345,7 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   /* 添加顶部边距，避免被AppLayout的顶部导航栏遮挡 */
-  margin-top: 400px;
+  margin-top: 0px;
 }
 
 /* 统计概览样式 */

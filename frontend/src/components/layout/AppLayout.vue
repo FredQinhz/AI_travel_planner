@@ -13,6 +13,7 @@
         <ul class="nav-menu">
           <li v-for="item in menuItems" :key="item.path" class="nav-item">
             <router-link 
+              v-if="item.path !== '/map'"
               :to="item.path" 
               class="nav-link"
               :class="{ active: $route.path === item.path }"
@@ -22,6 +23,18 @@
               </el-icon>
               <span v-if="!isSidebarCollapsed" class="nav-text">{{ item.name }}</span>
             </router-link>
+            <a
+              v-else
+              @click.prevent="goToMapPage"
+              class="nav-link"
+              :class="{ active: $route.path === item.path }"
+              href="#"
+            >
+              <el-icon class="nav-icon">
+                <component :is="item.icon" />
+              </el-icon>
+              <span v-if="!isSidebarCollapsed" class="nav-text">{{ item.name }}</span>
+            </a>
           </li>
         </ul>
       </nav>
@@ -77,7 +90,7 @@
       </header>
       
       <!-- 页面内容 -->
-      <div class="content-area" :class="{ 'no-top-header': isTripDetailPage, 'map-page': isMapPage }">
+      <div class="content-area" :class="{ 'no-top-header': isTripDetailPage }">
         <slot></slot>
       </div>
     </main>
@@ -127,10 +140,10 @@ const isTripDetailPage = computed(() => {
   return route.path.startsWith('/trips/') && route.params.id
 })
 
-// 判断是否是地图页面
-const isMapPage = computed(() => {
-  return route.path === '/map'
-})
+// 判断是否是地图页面（已移除，地图页面现在是独立页面）
+// const isMapPage = computed(() => {
+//   return route.path === '/map'
+// })
 
 // 菜单项配置
 const menuItems = [
@@ -153,6 +166,16 @@ const toggleSidebar = () => {
 const handleLogout = () => {
   authStore.logout()
   router.push('/login')
+}
+
+// 跳转到地图页面，保存当前路径
+const goToMapPage = () => {
+  router.push({
+    path: '/map',
+    query: {
+      returnPath: route.fullPath // 保存当前完整路径用于返回
+    }
+  })
 }
 
 // 更新 CSS 变量
@@ -428,16 +451,7 @@ onMounted(() => {
   overflow-y: visible; /* 让子页面自己控制滚动 */
 }
 
-/* 地图页面样式 - 移除所有 padding，让地图占据整个空间 */
-.content-area.map-page {
-  padding: 0 !important;
-  overflow: hidden !important; /* 让地图页面自己控制滚动 */
-  height: calc(100vh - 64px) !important; /* 减去顶部栏高度 */
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-}
+/* 地图页面样式已移除，地图页面现在是独立页面，不受 layout 影响 */
 
 /* 响应式设计 */
 @media (max-width: 768px) {

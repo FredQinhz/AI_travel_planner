@@ -2,6 +2,17 @@
   <div class="map-page">
     <!-- 侧边栏 -->
     <aside class="map-sidebar">
+      <!-- 返回按钮 - 在侧边栏内部左上角 -->
+      <el-button 
+        class="back-button" 
+        type="primary" 
+        @click="goBack" 
+        :icon="ArrowLeft"
+        size="small"
+      >
+        返回
+      </el-button>
+      
       <div class="sidebar-header">
         <h3>行程地图</h3>
       </div>
@@ -99,23 +110,25 @@
           </el-radio-button>
         </el-radio-group>
         -->
-        <el-button
-          type="primary"
-          :icon="MapLocation"
-          @click="planRoute"
-          :loading="routePlanning"
-          class="plan-route-button"
-        >
-          规划当日路线
-        </el-button>
-        <el-button
-          type="default"
-          :icon="Delete"
-          @click="clearRoute"
-          class="clear-route-button"
-        >
-          清除路线
-        </el-button>
+        <div class="route-buttons-container">
+          <el-button
+            type="primary"
+            :icon="MapLocation"
+            @click="planRoute"
+            :loading="routePlanning"
+            class="plan-route-button"
+          >
+            规划当日路线
+          </el-button>
+          <el-button
+            type="default"
+            :icon="Delete"
+            @click="clearRoute"
+            class="clear-route-button"
+          >
+            清除路线
+          </el-button>
+        </div>
       </div>
 
       <!-- 空状态 -->
@@ -137,7 +150,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useTripsStore } from '@/stores/trips';
 import MapService, { type Location as MapLocationType, type RouteType } from '@/services/MapService';
 import { ElMessage } from 'element-plus';
@@ -146,12 +159,14 @@ import {
   Clock,
   Location,
   ArrowRight,
+  ArrowLeft,
   MapLocation,
   Delete,
   Loading
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
+const router = useRouter();
 const tripsStore = useTripsStore();
 
 // 状态
@@ -193,6 +208,13 @@ const getLocationTypeName = (type: string): string => {
     'hotel': '酒店'
   };
   return typeMap[type] || type;
+};
+
+// 返回上一页
+const goBack = () => {
+  // 从 query 参数中获取返回路径，如果没有则返回 dashboard
+  const returnPath = (route.query.returnPath as string) || '/dashboard';
+  router.push(returnPath);
 };
 
 // 初始化地图
@@ -432,13 +454,14 @@ watch(currentDayLocations, () => {
 <style scoped>
 .map-page {
   display: flex;
-  height: 100%; /* 占据父容器（content-area）的全部高度 */
-  width: 100%; /* 占据父容器的全部宽度 */
-  max-width: 100%;
+  height: 100vh; /* 占据整个视口高度 */
+  width: 100vw; /* 占据整个视口宽度 */
   background: #f5f7fa;
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 /* 侧边栏样式 */
@@ -453,10 +476,29 @@ watch(currentDayLocations, () => {
   overflow-y: auto;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   flex-shrink: 0; /* 防止侧边栏被压缩 */
+  position: relative;
+}
+
+/* 返回按钮 - 在侧边栏内部左上角 */
+.back-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  border-radius: 8px; /* 方形圆角 */
+  padding: 8px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-header {
   padding: 20px 20px 16px;
+  padding-top: 70px; /* 为返回按钮留出空间 */
   border-bottom: 1px solid #e4e7ed;
   background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
 }
@@ -638,14 +680,17 @@ watch(currentDayLocations, () => {
   gap: 6px;
 }
 
+.route-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
 .plan-route-button,
 .clear-route-button {
   width: 100%;
-  margin-bottom: 8px;
-}
-
-.clear-route-button {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .empty-state {

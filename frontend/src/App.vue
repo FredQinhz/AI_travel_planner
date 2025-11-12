@@ -5,9 +5,9 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 
 const route = useRoute()
 
-// 判断是否需要显示布局（登录/注册页面和行程详情页面不需要）
+// 判断是否需要显示布局（登录/注册页面和地图页面不需要）
 const showLayout = computed(() => {
-  const noLayoutRoutes = ['/login', '/register']
+  const noLayoutRoutes = ['/login', '/register', '/map']
   
   return !noLayoutRoutes.includes(route.path)
 })
@@ -38,5 +38,8 @@ html, body {
 .app-container {
   min-height: 100vh;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 </style>

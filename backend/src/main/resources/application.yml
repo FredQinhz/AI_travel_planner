@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/ai_travel_planner}
-    username: ${JDBC_DATABASE_USERNAME:postgres}
-    password: ${JDBC_DATABASE_PASSWORD:123456}
+    url: ${JDBC_DATABASE_URL}
+    username: ${JDBC_DATABASE_USERNAME}
+    password: ${JDBC_DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,10 +15,10 @@ spring:
           dialect: org.hibernate.dialect.PostgreSQL10Dialect
 
 jwt:
-  secret: ${JWT_SECRET:ThisIsASecretKeyForJwtMustBeAtLeast32Bytes!}
-  expiration-ms: ${JWT_EXP_MS:86400000}
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXP_MS}
 
 llm:
   qwen:
-    apiKey: ${QWEN_API_KEY:sk-1e071cc30d7e46ac9eeb75c9bb7c9e01}
+    apiKey: ${QWEN_API_KEY}
     model: qwen-max

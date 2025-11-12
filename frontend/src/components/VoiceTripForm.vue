@@ -1197,6 +1197,13 @@ const handleCreateTrip = async () => {
 }
 
 /* 响应式设计 */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+}
+
 @media (max-width: 768px) {
   .voice-input-container {
     padding: 16px;
