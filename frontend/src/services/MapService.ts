@@ -3,6 +3,17 @@
  * 封装高德地图API，提供位置标记、路线绘制等通用功能
  */
 
+declare global {
+  interface Window {
+    AMap?: any;
+    _AMapSecurityConfig?: {
+      securityJsCode: string;
+    };
+  }
+}
+
+declare const AMap: any;
+
 export interface Location {
   name: string;
   lat: number;
@@ -38,25 +49,41 @@ export class MapService {
   async initMap(containerId: string, center: { lng: number; lat: number }, zoom: number = 12): Promise<void> {
     return new Promise((resolve, reject) => {
       // 检查是否已加载高德地图API
-      if (!window.AMap) {
+      const win = window as Window;
+      if (!win.AMap) {
         // 配置安全密钥（如果提供了）
         const securityJsCode = import.meta.env.VITE_AMAP_SECURITY_JS_CODE;
         if (securityJsCode) {
-          (window as any)._AMapSecurityConfig = {
+          win._AMapSecurityConfig = {
             securityJsCode: securityJsCode
           };
+        }
+        
+        // 检查 API Key
+        const apiKey = import.meta.env.VITE_AMAP_KEY;
+        if (!apiKey || apiKey === 'your-amap-key' || apiKey.trim() === '') {
+          const errorMsg = '高德地图 API Key 未配置，请在环境变量中设置 VITE_AMAP_KEY';
+          console.error(errorMsg);
+          reject(new Error(errorMsg));
+          return;
         }
         
         // 动态加载高德地图API
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        const apiKey = import.meta.env.VITE_AMAP_KEY || 'your-amap-key';
-        // 不在URL中加载插件，而是使用 AMap.plugin() 方法异步加载
         script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
         script.onload = () => {
+          // 再次检查 AMap 是否加载成功
+          if (!win.AMap) {
+            reject(new Error('高德地图 API 加载失败：AMap 对象未定义'));
+            return;
+          }
           this.createMap(containerId, center, zoom, resolve, reject);
         };
-        script.onerror = reject;
+        script.onerror = (error) => {
+          console.error('高德地图 API 脚本加载失败:', error);
+          reject(new Error('高德地图 API 脚本加载失败，请检查网络连接和 API Key 配置'));
+        };
         document.head.appendChild(script);
       } else {
         this.createMap(containerId, center, zoom, resolve, reject);
@@ -344,8 +371,8 @@ export class MapService {
     this.clearRoutes();
 
     return new Promise((resolve, reject) => {
-      const start = locations[0];
-      const end = locations[locations.length - 1];
+      const start = locations[0]!;
+      const end = locations[locations.length - 1]!;
       const waypoints = locations.slice(1, -1);
 
       const callback = (status: string, result: any) => {

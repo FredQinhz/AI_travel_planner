@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, toRefs } from 'vue';
 import { ElCard, ElTabs, ElTabPane, ElTag, ElEmpty, ElButton } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
-import type { DayPlanDTO, LocationDTO } from '@/stores/trips';
+import type { DayPlanDTO } from '@/stores/trips';
 
 interface Props {
   dayPlans: DayPlanDTO[];
@@ -12,6 +12,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   refreshing: false
 });
+
+const { dayPlans, refreshing } = toRefs(props);
 
 const emit = defineEmits<{
   refresh: [];

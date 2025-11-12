@@ -62,45 +62,60 @@ ai-travel-planner/
 
 ---
 
-## 🚀 快速开始
+## 🚀 部署方式
 
-### ✅ 一键部署（Docker 推荐）
+> 三种方式任选其一，所有环境变量说明请参考 [`ENV_SETUP.md`](ENV_SETUP.md)。
 
-1. **准备环境变量**  
-   在项目根目录创建 `.env`（docker-compose 会自动加载），或在终端导出下列变量：
+### ✅ 方式一：下载 Release 镜像（推荐给体验者）
+
+1. 前往 GitHub **Releases** 页下载 `ai-travel-backend-*.tar` 与 `ai-travel-frontend-*.tar` 镜像文件，必要时解压。
+2. 导入镜像：
    ```bash
-   # 数据库
-   POSTGRES_PASSWORD=123456          # 如需自定义数据库密码，请同步修改 docker-compose.yml -> ports/volumes
-   
-   # 后端
-   JWT_SECRET=change_this_in_prod    # 必填，用于 JWT
-   JWT_EXP_MS=86400000               # 可选，JWT 有效期
-   QWEN_API_KEY=sk-xxxx              # 必填，通义千问 API Key
-   
-   # 前端构建参数（在 docker-compose build 阶段注入）
-   VITE_AMAP_KEY=your-amap-key
-   VITE_AMAP_SECURITY_JS_CODE=your-security-code
+   docker load -i ai-travel-backend-1.0.0.tar
+   docker load -i ai-travel-frontend-1.0.0.tar
    ```
-   > 未提供高德地图密钥时，地图与路线规划将无法正常显示；未提供 QWEN API Key 时，AI 行程生成功能不可用。
+3. 在项目根目录配置 `.env`（见 [`ENV_SETUP.md`](ENV_SETUP.md)）。
+4. 使用现成的 `docker-compose.yml` 启动：
+   ```bash
+   docker-compose up -d
+   ```
+   > Release 说明模板与更多细节可参见 [`RELEASE_GUIDE.md`](RELEASE_GUIDE.md)。
 
-2. **构建并启动**
-   
+### 🧰 方式二：本地构建 Docker（适合定制部署）
+
+1. 准备 `.env`（参考 [`ENV_SETUP.md`](ENV_SETUP.md)）。
+2. 执行：
    ```bash
    docker-compose up -d --build
    ```
-   
-3. **访问应用**
-   - 前端应用（Nginx）：<http://localhost:3000>
-   - 后端 REST API：<http://localhost:8080/api>
-   - PostgreSQL：`localhost:5432`（默认用户/密码 `postgres` / `123456`）  
-     > 仅当映射端口保持默认时，从宿主机可通过 `localhost:5432` 连接；容器内部请使用服务名 `postgres`。
-
-4. **管理容器**
-   
+3. 访问地址：
+   - 前端（Nginx）：<http://localhost:3000>
+   - 后端 API：<http://localhost:8080/api>
+   - PostgreSQL（宿主机）：`localhost:5432`
+4. 日常运维：
    ```bash
-   docker-compose logs -f backend   # 查看后端日志
-   docker-compose down              # 停止并移除容器
+   docker-compose logs -f backend
+   docker-compose down
    ```
+
+### 💻 方式三：本地源码运行（适合开发调试）
+
+1. **准备环境**
+   - PostgreSQL ≥ 13 并创建数据库
+   - `.env`：后端放在项目根目录（被 Spring Boot 自动读取），前端放在 `frontend/.env`（仅开发模式需要）
+   - 必填变量：`POSTGRES_*`、`JWT_SECRET`、`QWEN_API_KEY`、`VITE_AMAP_KEY`
+2. **启动后端**
+   ```bash
+   cd backend
+   mvn spring-boot:run
+   ```
+3. **启动前端**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+4. 打开浏览器访问 <http://localhost:5173>。
 
 ---
 

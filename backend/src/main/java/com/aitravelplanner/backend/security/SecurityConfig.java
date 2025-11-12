@@ -48,7 +48,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"));
+        // 允许开发环境和生产环境的源
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",      // Docker 前端
+            "http://127.0.0.1:3000",     // Docker 前端
+            "http://localhost:5173",      // Vite 开发服务器
+            "http://127.0.0.1:5173",      // Vite 开发服务器
+            "http://localhost:5174",      // Vite 开发服务器（备用端口）
+            "http://127.0.0.1:5174"       // Vite 开发服务器（备用端口）
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

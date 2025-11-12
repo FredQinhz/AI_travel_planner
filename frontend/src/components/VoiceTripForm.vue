@@ -6,6 +6,31 @@ import { ElMessage } from 'element-plus';
 import { Microphone, VideoPause } from '@element-plus/icons-vue';
 import type { TripRequest } from '@/stores/trips';
 
+type MatchWithGroups = RegExpMatchArray & {
+  [index: number]: string | undefined;
+};
+
+interface ExtractedTripInfo {
+  destination?: string;
+  startDate?: string;
+  endDate?: string;
+  days?: number;
+  budget?: number;
+  travelers?: number;
+  preferences: string[];
+}
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
+const parseNumberFromText = (value: string | undefined): number | undefined => {
+  if (!isNonEmptyString(value)) {
+    return undefined;
+  }
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
 // Web Speech API 类型声明
 declare global {
   interface Window {
@@ -228,14 +253,8 @@ const extractTripInfoFromText = (text: string) => {
   if (!text) return;
   
   // 重置提取结果
-  const extractedInfo = {
-    destination: '',
-    startDate: '',
-    endDate: '',
-    days: 0,
-    budget: 0,
-    travelers: 1,
-    preferences: [] as string[]
+  const extractedInfo: ExtractedTripInfo = {
+    preferences: []
   };
   
   // 1. 提取目的地 - 使用地名词典和模式匹配
@@ -310,9 +329,14 @@ const extractTripInfoFromText = (text: string) => {
   
   // 尝试从模式中提取目的地
   for (const pattern of destinationPatterns) {
-    const matches = [...text.matchAll(pattern)];
-    if (matches.length > 0) {
-      extractedInfo.destination = matches[0][1];
+    const matches = Array.from(text.matchAll(pattern)) as MatchWithGroups[];
+    const match = matches[0];
+    if (!match) {
+      continue;
+    }
+    const destinationCapture = match[1];
+    if (isNonEmptyString(destinationCapture)) {
+      extractedInfo.destination = destinationCapture;
       break;
     }
   }
@@ -367,34 +391,105 @@ const extractTripInfoFromText = (text: string) => {
   ];
   
   // 中文数字转换函数
-  const chineseToNumber = (chineseNum) => {
-    const chineseNumbers = {
-      '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
-      '十': 10, '百': 100, '千': 1000, '万': 10000, '亿': 100000000
-    };
-    
-    // 处理简单数字：一、二、三...
-    if (chineseNum.length === 1 && chineseNumbers[chineseNum] !== undefined && chineseNumbers[chineseNum] < 10) {
-      return chineseNumbers[chineseNum];
+  const chineseToNumber = (chineseNum: string): number | undefined => {
+    const chineseNumbers: Record<string, number> = {
+    '零': 0,
+    '一': 1,
+    '二': 2,
+    '三': 3,
+    '四': 4,
+    '五': 5,
+    '六': 6,
+    '七': 7,
+    '八': 8,
+    '九': 9,
+    '十': 10,
+    '百': 100,
+    '千': 1000,
+    '万': 10000,
+    '亿': 100000000
+  };
+
+    const normalized = chineseNum.trim();
+    if (!normalized) {
+      return undefined;
     }
-    
-    // 处理十以内的数字：十一、十二...
-    if (chineseNum.length === 2 && chineseNum[0] === '十' && chineseNumbers[chineseNum[1]] !== undefined) {
-      return 10 + chineseNumbers[chineseNum[1]];
+
+    if (normalized.length === 1) {
+      const value = chineseNumbers[normalized];
+      return value !== undefined ? value : undefined;
     }
-    
-    // 处理十的倍数：二十、三十...
-    if (chineseNum.length === 2 && chineseNumbers[chineseNum[0]] !== undefined && chineseNum[1] === '十') {
-      return chineseNumbers[chineseNum[0]] * 10;
+
+    if (normalized === '十') {
+      return 10;
     }
-    
-    // 处理复杂数字：二十一、三十二...
-    if (chineseNum.length === 3 && chineseNumbers[chineseNum[0]] !== undefined && chineseNum[1] === '十' && chineseNumbers[chineseNum[2]] !== undefined) {
-      return chineseNumbers[chineseNum[0]] * 10 + chineseNumbers[chineseNum[2]];
+
+    if (normalized.includes('亿') || normalized.includes('万')) {
+      let total = 0;
+      let segment = normalized;
+
+      const parseSegment = (part: string): number => {
+        let segmentResult = 0;
+        let currentUnit = 1;
+        for (let i = part.length - 1; i >= 0; i -= 1) {
+          const char = part[i];
+          const digit = char ? chineseNumbers[char as keyof typeof chineseNumbers] : undefined;
+          if (digit === undefined) {
+            continue;
+          }
+          if (digit >= 10) {
+            currentUnit = digit;
+            if (i === 0) {
+              segmentResult += digit;
+            }
+          } else {
+            segmentResult += digit * currentUnit;
+          }
+        }
+        return segmentResult;
+      };
+
+      if (segment.includes('亿')) {
+        const [left, right = ''] = segment.split('亿');
+        if (left) {
+          total += parseSegment(left) * 100000000;
+        }
+        segment = right;
+      }
+      if (segment.includes('万')) {
+        const [left, right = ''] = segment.split('万');
+        if (left) {
+          total += parseSegment(left) * 10000;
+        }
+        segment = right;
+      }
+      total += parseSegment(segment);
+      return total || undefined;
     }
-    
-    // 默认返回0，表示无法转换
-    return 0;
+
+    if (normalized.includes('千') || normalized.includes('百') || normalized.includes('十')) {
+      let result = 0;
+      let currentUnit = 1;
+      for (let i = normalized.length - 1; i >= 0; i -= 1) {
+        const char = normalized[i];
+        const digit = char ? chineseNumbers[char as keyof typeof chineseNumbers] : undefined;
+        if (digit === undefined) {
+          continue;
+        }
+        if (digit >= 10) {
+          currentUnit = digit;
+          if (i === 0) {
+            result += digit;
+          }
+        } else {
+          result += digit * currentUnit;
+        }
+      }
+      return result || undefined;
+    }
+
+    const fallback = Number(normalized);
+    return Number.isNaN(fallback) ? undefined : fallback;
   };
   
   // 天数匹配 - 支持中文数字（优化：支持"X天的旅程"、"X天旅程"等多种表达）
@@ -409,114 +504,142 @@ const extractTripInfoFromText = (text: string) => {
   ];
   
   // 处理具体日期信息（优化后的简洁逻辑）
+  const currentYear = new Date().getFullYear();
   for (const pattern of datePatterns) {
-    const matches = [...text.matchAll(pattern)];
-    if (matches.length > 0) {
-      const match = matches[0];
-      if (!match) continue;
-      
-      const currentYear = new Date().getFullYear();
-      const captureCount = match.length - 1; // match[0] 是完整匹配，后续是捕获组
-      
-      // 情况1: 完整日期范围（5个捕获组）：2025年12月1日到12月20日 或 2025年 12月1日到12月20日
-      // match[1]=年份, match[2]=开始月, match[3]=开始日, match[4]=结束月, match[5]=结束日
-      if (captureCount === 5 && match[1] && match[2] && match[3] && match[4] && match[5]) {
-        const startYear = parseInt(match[1]);
-        const startMonth = parseInt(match[2]) - 1;
-        const startDay = parseInt(match[3]);
-        const endMonth = parseInt(match[4]) - 1;
-        const endDay = parseInt(match[5]);
-        
-        const startDate = new Date(startYear, startMonth, startDay);
-        const endDate = new Date(startYear, endMonth, endDay);
-        
-        // 如果结束月份小于开始月份，说明跨年了
-        if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
-          endDate.setFullYear(startYear + 1);
-        }
-        
-        extractedInfo.startDate = formatDate(startDate);
-        extractedInfo.endDate = formatDate(endDate);
-        extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        break;
-      }
-      
-      // 情况2: 跨年日期范围（6个捕获组）：2025年12月1日到2026年1月5日
-      // match[1]=开始年, match[2]=开始月, match[3]=开始日, match[4]=结束年, match[5]=结束月, match[6]=结束日
-      if (captureCount === 6 && match[1] && match[2] && match[3] && match[4] && match[5] && match[6]) {
-        const startYear = parseInt(match[1]);
-        const startMonth = parseInt(match[2]) - 1;
-        const startDay = parseInt(match[3]);
-        const endYear = parseInt(match[4]);
-        const endMonth = parseInt(match[5]) - 1;
-        const endDay = parseInt(match[6]);
-        
-        const startDate = new Date(startYear, startMonth, startDay);
-        const endDate = new Date(endYear, endMonth, endDay);
-        
-        extractedInfo.startDate = formatDate(startDate);
-        extractedInfo.endDate = formatDate(endDate);
-        extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        break;
-      }
-      
-      // 情况3: 无年份的月份日期范围（4个捕获组）：12月1日到12月20日
-      // match[1]=开始月, match[2]=开始日, match[3]=结束月, match[4]=结束日
-      if (captureCount === 4 && match[1] && match[2] && match[3] && match[4] && !match[1].match(/^\d{4}$/)) {
-        const startMonth = parseInt(match[1]) - 1;
-        const startDay = parseInt(match[2]);
-        const endMonth = parseInt(match[3]) - 1;
-        const endDay = parseInt(match[4]);
-        
-        const startDate = new Date(currentYear, startMonth, startDay);
-        const endDate = new Date(currentYear, endMonth, endDay);
-        
-        // 如果结束月份小于开始月份，说明跨年了
-        if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
-          endDate.setFullYear(currentYear + 1);
-        }
-        
-        extractedInfo.startDate = formatDate(startDate);
-        extractedInfo.endDate = formatDate(endDate);
-        extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        break;
-      }
-      
-      // 情况4: 单个日期（有年份，3个捕获组）：2025年12月1日 或 2025年 12月1日
-      // match[1]=年份, match[2]=月, match[3]=日
-      if (captureCount === 3 && match[1] && match[2] && match[3] && match[1].match(/^\d{4}$/)) {
-        const year = parseInt(match[1]);
-        const month = parseInt(match[2]) - 1;
-        const day = parseInt(match[3]);
-        const date = new Date(year, month, day);
-        
-        if (!extractedInfo.startDate) {
-          extractedInfo.startDate = formatDate(date);
-        } else if (!extractedInfo.endDate) {
-          extractedInfo.endDate = formatDate(date);
-          const startDate = new Date(extractedInfo.startDate);
-          extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        }
-        // 如果已经有开始和结束日期，跳过
+    const matches = Array.from(text.matchAll(pattern)) as MatchWithGroups[];
+    const match = matches[0];
+    if (!match) {
+      continue;
+    }
+
+    const captureCount = match.length - 1;
+
+    if (captureCount === 5) {
+      const startYear = parseNumberFromText(match[1]);
+      const startMonth = parseNumberFromText(match[2]);
+      const startDay = parseNumberFromText(match[3]);
+      const endMonth = parseNumberFromText(match[4]);
+      const endDay = parseNumberFromText(match[5]);
+      if (
+        startYear === undefined ||
+        startMonth === undefined ||
+        startDay === undefined ||
+        endMonth === undefined ||
+        endDay === undefined
+      ) {
         continue;
       }
-      
-      // 情况5: 单个日期（无年份，2个捕获组）：12月1日
-      // match[1]=月, match[2]=日
-      if (captureCount === 2 && match[1] && match[2] && !match[1].match(/^\d{4}$/)) {
-        const month = parseInt(match[1]) - 1;
-        const day = parseInt(match[2]);
-        const date = new Date(currentYear, month, day);
-        
-        if (!extractedInfo.startDate) {
-          extractedInfo.startDate = formatDate(date);
-        } else if (!extractedInfo.endDate) {
-          extractedInfo.endDate = formatDate(date);
-          const startDate = new Date(extractedInfo.startDate);
-          extractedInfo.days = Math.ceil((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        }
-        // 如果已经有开始和结束日期，跳过
+
+      const startDate = new Date(startYear, startMonth - 1, startDay);
+      const endDate = new Date(startYear, endMonth - 1, endDay);
+      if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
+        endDate.setFullYear(startYear + 1);
+      }
+
+      extractedInfo.startDate = formatDate(startDate);
+      extractedInfo.endDate = formatDate(endDate);
+      extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      break;
+    }
+
+    if (captureCount === 6) {
+      const startYear = parseNumberFromText(match[1]);
+      const startMonth = parseNumberFromText(match[2]);
+      const startDay = parseNumberFromText(match[3]);
+      const endYear = parseNumberFromText(match[4]);
+      const endMonth = parseNumberFromText(match[5]);
+      const endDay = parseNumberFromText(match[6]);
+      if (
+        startYear === undefined ||
+        startMonth === undefined ||
+        startDay === undefined ||
+        endYear === undefined ||
+        endMonth === undefined ||
+        endDay === undefined
+      ) {
         continue;
+      }
+
+      const startDate = new Date(startYear, startMonth - 1, startDay);
+      const endDate = new Date(endYear, endMonth - 1, endDay);
+      extractedInfo.startDate = formatDate(startDate);
+      extractedInfo.endDate = formatDate(endDate);
+      extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      break;
+    }
+
+    if (captureCount === 4) {
+      const startMonth = parseNumberFromText(match[1]);
+      const startDay = parseNumberFromText(match[2]);
+      const endMonth = parseNumberFromText(match[3]);
+      const endDay = parseNumberFromText(match[4]);
+      if (
+        startMonth === undefined ||
+        startDay === undefined ||
+        endMonth === undefined ||
+        endDay === undefined
+      ) {
+        continue;
+      }
+
+      const startDate = new Date(currentYear, startMonth - 1, startDay);
+      const endDate = new Date(currentYear, endMonth - 1, endDay);
+      if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
+        endDate.setFullYear(currentYear + 1);
+      }
+
+      extractedInfo.startDate = formatDate(startDate);
+      extractedInfo.endDate = formatDate(endDate);
+      extractedInfo.days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      break;
+    }
+
+    if (captureCount === 3) {
+      const yearStr = match[1];
+      if (!isNonEmptyString(yearStr) || !/^\d{4}$/.test(yearStr)) {
+        continue;
+      }
+      const year = parseNumberFromText(yearStr);
+      const month = parseNumberFromText(match[2]);
+      const day = parseNumberFromText(match[3]);
+      if (year === undefined || month === undefined || day === undefined) {
+        continue;
+      }
+
+      const date = new Date(year, month - 1, day);
+      if (!extractedInfo.startDate) {
+        extractedInfo.startDate = formatDate(date);
+      } else if (!extractedInfo.endDate) {
+        extractedInfo.endDate = formatDate(date);
+        if (extractedInfo.startDate) {
+          const startDateObj = new Date(extractedInfo.startDate);
+          extractedInfo.days = Math.ceil((date.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
+      }
+      continue;
+    }
+
+    if (captureCount === 2) {
+      const monthStr = match[1];
+      const dayStr = match[2];
+      if (isNonEmptyString(monthStr) && /^\d{4}$/.test(monthStr)) {
+        continue;
+      }
+      const month = parseNumberFromText(monthStr);
+      const day = parseNumberFromText(dayStr);
+      if (month === undefined || day === undefined) {
+        continue;
+      }
+
+      const date = new Date(currentYear, month - 1, day);
+      if (!extractedInfo.startDate) {
+        extractedInfo.startDate = formatDate(date);
+      } else if (!extractedInfo.endDate) {
+        extractedInfo.endDate = formatDate(date);
+        if (extractedInfo.startDate) {
+          const startDateObj = new Date(extractedInfo.startDate);
+          extractedInfo.days = Math.ceil((date.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
       }
     }
   }
@@ -531,92 +654,68 @@ const extractTripInfoFromText = (text: string) => {
       text: text.substring(0, 100) // 只显示前100个字符
     });
     
-    for (let i = 0; i < dayPatterns.length; i++) {
+    for (let i = 0; i < dayPatterns.length; i += 1) {
       const pattern = dayPatterns[i];
-      if (!pattern) continue;
-      const matches = [...text.matchAll(pattern)];
-      console.log(`尝试模式 ${i + 1}:`, pattern, '匹配结果:', matches.length);
-      
-      if (matches.length > 0) {
-        let startDays: number | undefined, endDays: number | undefined;
-        const match = matches[0];
-        if (!match) {
-          console.log('匹配结果为空，跳过');
-          continue;
-        }
-        
-        console.log('匹配成功:', {
-          fullMatch: match[0],
-          capture1: match[1],
-          capture2: match[2],
-          allCaptures: match
-        });
-        
-        // 确定捕获组的索引（有些模式可能有不同的捕获组位置）
-        // 对于"完成一场六天的旅程"这种模式，捕获组在 match[1]，值是"六"
-        // 对于"六天"这种模式，捕获组也在 match[1]，值是"六"
-        // 对于"玩三天"这种模式，捕获组在 match[1]，值是"三"
-        // 对于范围"三-五天"，match[1]是"三"，match[2]是"五"
-        let dayValue: string | undefined;
-        
-        // 优先使用第一个捕获组
-        if (match[1]) {
-          dayValue = match[1];
-          console.log('使用捕获组1:', dayValue);
-        } else if (match[0]) {
-          // 如果没有捕获组，从完整匹配中提取数字
-          const numMatch = match[0].match(/([零一二三四五六七八九十百千万亿]+|[\d]+)/);
-          dayValue = numMatch ? numMatch[1] : undefined;
-          console.log('从完整匹配中提取:', dayValue);
-        }
-        
-        if (!dayValue) {
-          console.log('无法提取天数值，跳过');
-          continue;
-        }
-        
-        // 处理中文数字或阿拉伯数字
-        if (/[零一二三四五六七八九十百千万亿]/.test(dayValue)) {
-          startDays = chineseToNumber(dayValue);
-          console.log(`中文数字转换：${dayValue} -> ${startDays}`);
-        } else {
-          // 阿拉伯数字
-          startDays = parseInt(dayValue, 10);
-          if (isNaN(startDays)) {
-            startDays = undefined;
-            console.log('无法解析为数字:', dayValue);
-          } else {
-            console.log(`阿拉伯数字解析：${dayValue} -> ${startDays}`);
-          }
-        }
-        
-        // 处理范围天数（如"三-五天"）
-        if (match[2]) {
-          if (/[零一二三四五六七八九十百千万亿]/.test(match[2])) {
-            endDays = chineseToNumber(match[2]);
-          } else {
-            endDays = parseInt(match[2], 10);
-            if (isNaN(endDays)) {
-              endDays = undefined;
-            }
-          }
-          // 范围天数，取平均值
-          if (startDays !== undefined && endDays !== undefined) {
-            extractedInfo.days = Math.round((startDays + endDays) / 2);
-            console.log(`范围天数：${startDays}-${endDays} -> ${extractedInfo.days}天`);
-          }
-        } else if (startDays !== undefined && startDays > 0) {
-          extractedInfo.days = startDays;
-          console.log(`单一天数：${startDays}天`);
-        }
-        
-        if (extractedInfo.days > 0) {
-          console.log(`天数识别成功：${match[0]} -> ${extractedInfo.days}天`);
-          break;
-        } else {
-          console.log('天数识别失败：startDays =', startDays);
-        }
+      if (!pattern) {
+        continue;
       }
+      const matches = Array.from(text.matchAll(pattern)) as MatchWithGroups[];
+      console.log(`尝试模式 ${i + 1}:`, pattern, '匹配结果:', matches.length);
+      const match = matches[0];
+      if (!match) {
+        continue;
+      }
+
+      console.log('匹配成功:', {
+        fullMatch: match[0],
+        capture1: match[1],
+        capture2: match[2],
+        allCaptures: match
+      });
+
+      let dayValue: string | undefined = match[1];
+      if (!isNonEmptyString(dayValue) && isNonEmptyString(match[0])) {
+        const numMatch = match[0].match(/([零一二三四五六七八九十百千万亿]+|\d+)/);
+        dayValue = numMatch ? numMatch[1] : undefined;
+      }
+
+      if (!isNonEmptyString(dayValue)) {
+        console.log('无法提取天数值，跳过');
+        continue;
+      }
+
+      let startDays: number | undefined;
+      if (/[零一二三四五六七八九十百千万亿]/.test(dayValue)) {
+        startDays = chineseToNumber(dayValue);
+        console.log(`中文数字转换：${dayValue} -> ${startDays}`);
+      } else {
+        const parsed = parseNumberFromText(dayValue);
+        startDays = parsed;
+        console.log(`阿拉伯数字解析：${dayValue} -> ${parsed}`);
+      }
+
+      let endDays: number | undefined;
+      const rangeCapture = match[2];
+      if (isNonEmptyString(rangeCapture)) {
+        if (/[零一二三四五六七八九十百千万亿]/.test(rangeCapture)) {
+          endDays = chineseToNumber(rangeCapture);
+        } else {
+          endDays = parseNumberFromText(rangeCapture);
+        }
+        if (startDays !== undefined && endDays !== undefined) {
+          extractedInfo.days = Math.round((startDays + endDays) / 2);
+          console.log(`范围天数：${startDays}-${endDays} -> ${extractedInfo.days}天`);
+        }
+      } else if (startDays !== undefined && startDays > 0) {
+        extractedInfo.days = startDays;
+        console.log(`单一天数：${startDays}天`);
+      }
+
+      if ((extractedInfo.days ?? 0) > 0) {
+        console.log(`天数识别成功：${match[0]} -> ${extractedInfo.days}天`);
+        break;
+      }
+      console.log('天数识别失败：startDays =', startDays);
     }
     
     console.log('天数提取完成，最终结果：', {
@@ -635,38 +734,39 @@ const extractTripInfoFromText = (text: string) => {
   ];
   
   for (const pattern of budgetPatterns) {
-    const matches = [...text.matchAll(pattern)];
-    if (matches.length > 0) {
-      let budget;
-      
-      // 处理中文数字或阿拉伯数字
-      if (/[零一二三四五六七八九十百千万亿]/.test(matches[0][1])) {
-        budget = chineseToNumber(matches[0][1]);
-      } else {
-        budget = parseFloat(matches[0][1]);
-      }
-      
-      // 处理"万"单位
-      if (text.includes('万') || text.includes('w')) {
-        budget *= 10000;
-      }
-      // 处理"千"单位
-      if (text.includes('千') || text.includes('k')) {
-        budget *= 1000;
-      }
-      
-      // 如果是人均预算，需要根据出行人数计算总预算
-      if (pattern.source.includes('人均')) {
-        // 获取出行人数，如果没有识别到人数，默认1人
-        const travelers = extractedInfo.travelers || 1;
-        budget = budget * travelers;
-        console.log(`人均预算识别：人均${matches[0][1]}元，${travelers}人，总预算${budget}元`);
-      }
-      
-      extractedInfo.budget = budget;
-      console.log(`预算识别：${matches[0][0]} -> ${budget}元`);
-      break;
+    const matches = Array.from(text.matchAll(pattern)) as MatchWithGroups[];
+    const match = matches[0];
+    if (!match || !isNonEmptyString(match[1])) {
+      continue;
     }
+
+    let budget: number | undefined;
+    if (/[零一二三四五六七八九十百千万亿]/.test(match[1])) {
+      budget = chineseToNumber(match[1]);
+    } else {
+      const parsed = Number(match[1]);
+      budget = Number.isNaN(parsed) ? undefined : parsed;
+    }
+
+    if (budget === undefined) {
+      continue;
+    }
+
+    if (text.includes('万') || text.includes('w')) {
+      budget *= 10000;
+    } else if (text.includes('千') || text.includes('k')) {
+      budget *= 1000;
+    }
+
+    if (pattern.source.includes('人均')) {
+      const travelers = extractedInfo.travelers ?? 1;
+      budget *= travelers;
+      console.log(`人均预算识别：人均${match[1]}元，${travelers}人，总预算${budget}元`);
+    }
+
+    extractedInfo.budget = budget;
+    console.log(`预算识别：${match[0]} -> ${budget}元`);
+    break;
   }
   
   // 4. 提取出行人数 - 支持中文数字
@@ -679,21 +779,26 @@ const extractTripInfoFromText = (text: string) => {
   ];
   
   for (const pattern of travelerPatterns) {
-    const matches = [...text.matchAll(pattern)];
-    if (matches.length > 0) {
-      let travelers;
-      
-      // 处理中文数字或阿拉伯数字
-      if (/[零一二三四五六七八九十百千万亿]/.test(matches[0][1])) {
-        travelers = chineseToNumber(matches[0][1]);
-      } else {
-        travelers = parseInt(matches[0][1]);
-      }
-      
-      extractedInfo.travelers = travelers;
-      console.log(`出行人数识别：${matches[0][0]} -> ${travelers}人`);
-      break;
+    const matches = Array.from(text.matchAll(pattern)) as MatchWithGroups[];
+    const match = matches[0];
+    if (!match || !isNonEmptyString(match[1])) {
+      continue;
     }
+
+    let travelers: number | undefined;
+    if (/[零一二三四五六七八九十百千万亿]/.test(match[1])) {
+      travelers = chineseToNumber(match[1]);
+    } else {
+      travelers = parseNumberFromText(match[1]);
+    }
+
+    if (travelers === undefined) {
+      continue;
+    }
+
+    extractedInfo.travelers = travelers;
+    console.log(`出行人数识别：${match[0]} -> ${travelers}人`);
+    break;
   }
   
   // 5. 提取旅行偏好
@@ -750,23 +855,24 @@ const extractTripInfoFromText = (text: string) => {
   
   // 6. 智能设置开始和结束日期（只有当没有识别到具体日期时）
   const today = new Date();
-  if (extractedInfo.days > 0 && !extractedInfo.endDate) {
+  if ((extractedInfo.days ?? 0) > 0 && !extractedInfo.endDate) {
     if (!extractedInfo.startDate) {
       extractedInfo.startDate = formatDate(today);
     }
     const startDate = extractedInfo.startDate ? new Date(extractedInfo.startDate) : today;
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + extractedInfo.days - 1); // 天数包含开始日期
+    endDate.setDate(startDate.getDate() + (extractedInfo.days ?? 1) - 1); // 天数包含开始日期
     extractedInfo.endDate = formatDate(endDate);
   }
   
   // 7. 生成智能标题
   let title = '语音创建的行程';
   if (extractedInfo.destination) {
-    if (extractedInfo.days > 0) {
-      title = `${extractedInfo.startDate} ${extractedInfo.destination} ${extractedInfo.days}日游`;
+    const startLabel = extractedInfo.startDate ?? tripDefaults.startDate;
+    if ((extractedInfo.days ?? 0) > 0) {
+      title = `${startLabel} ${extractedInfo.destination} ${extractedInfo.days}日游`;
     } else {
-      title = `${extractedInfo.startDate} ${extractedInfo.destination}的行程`;
+      title = `${startLabel} ${extractedInfo.destination}的行程`;
     }
   }
   
@@ -775,22 +881,22 @@ const extractTripInfoFromText = (text: string) => {
   tripDefaults.destination = extractedInfo.destination || '北京';
   
   // 智能设置开始和结束日期
-  if (extractedInfo.startDate && extractedInfo.days > 0 && !extractedInfo.endDate) {
+  if (extractedInfo.startDate && (extractedInfo.days ?? 0) > 0 && !extractedInfo.endDate) {
     // 基于开始日期和天数计算结束日期
     const startDate = new Date(extractedInfo.startDate);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + extractedInfo.days - 1); // 天数包含开始日期
+    endDate.setDate(startDate.getDate() + (extractedInfo.days ?? 1) - 1); // 天数包含开始日期
     tripDefaults.startDate = extractedInfo.startDate;
     tripDefaults.endDate = formatDate(endDate);
   } else {
     // 使用默认逻辑
-    tripDefaults.startDate = extractedInfo.startDate || formatDate(today);
-    tripDefaults.endDate = extractedInfo.endDate || formatDate(new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)); // 默认3天
+    tripDefaults.startDate = extractedInfo.startDate ?? formatDate(today);
+    tripDefaults.endDate = extractedInfo.endDate ?? formatDate(new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)); // 默认3天
   }
   
-  tripDefaults.budgetTotal = extractedInfo.budget || 5000;
-  tripDefaults.companionCount = extractedInfo.travelers || 1;
-  tripDefaults.preferences = extractedInfo.preferences;
+  tripDefaults.budgetTotal = extractedInfo.budget ?? 5000;
+  tripDefaults.companionCount = extractedInfo.travelers ?? 1;
+  tripDefaults.preferences = [...extractedInfo.preferences];
   
   console.log('智能提取结果:', extractedInfo);
 };

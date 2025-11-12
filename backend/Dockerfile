@@ -13,7 +13,13 @@ COPY src/ ./src/
 RUN mvn -B clean package -DskipTests
 
 # === Runtime stage ==========================================================
-FROM eclipse-temurin:8-jre-alpine
+FROM eclipse-temurin:8-jre
+
+# 更新证书和安装必要工具
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
 WORKDIR /app

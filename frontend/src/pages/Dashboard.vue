@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import { useTripsStore } from '@/stores/trips';
 import { ElTable, ElTableColumn, ElButton, ElCard, ElEmpty, ElMessageBox, ElMessage } from 'element-plus';
 import { 
@@ -16,7 +15,6 @@ import {
 } from '@element-plus/icons-vue';
 
 const router = useRouter();
-const authStore = useAuthStore();
 const tripsStore = useTripsStore();
 const loading = ref(true);
 
@@ -116,12 +114,6 @@ const getTripStatusText = (trip: any) => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('zh-CN');
-};
-
-// 退出登录
-const handleLogout = () => {
-  authStore.logout();
-  router.push('/login');
 };
 
 // 组件挂载时加载行程

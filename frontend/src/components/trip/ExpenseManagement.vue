@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ElCard, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSelect, ElDatePicker, ElMessage, ElMessageBox, ElTag, ElStatistic, ElRow, ElCol, ElEmpty, ElProgress } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { Plus, Edit, Delete, Money, TrendCharts } from '@element-plus/icons-vue';
 import { useExpensesStore, type ExpenseRequest } from '@/stores/expenses';
 // 使用原生 Date API 格式化日期
@@ -17,12 +18,13 @@ const expensesStore = useExpensesStore();
 const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const showBudgetDialog = ref(false);
-const currentExpense = ref<ExpenseRequest | null>(null);
 const editingExpenseId = ref<string | null>(null);
 
 // 表单引用
-const addFormRef = ref();
-const editFormRef = ref();
+const addFormRef = ref<FormInstance>();
+const editFormRef = ref<FormInstance>();
+
+const getTodayDateString = () => new Date().toISOString().slice(0, 10);
 
 // 表单数据
 const expenseForm = ref<ExpenseRequest>({
@@ -30,11 +32,11 @@ const expenseForm = ref<ExpenseRequest>({
   currency: 'CNY',
   comment: '',
   category: '',
-  expenseDate: new Date().toISOString().split('T')[0]
+  expenseDate: getTodayDateString()
 });
 
 // 表单验证规则
-const formRules = {
+const formRules: FormRules<ExpenseRequest> = {
   amount: [
     { required: true, message: '请输入金额', trigger: 'blur' },
     { type: 'number', min: 0.01, message: '金额必须大于0', trigger: 'blur' }
@@ -87,7 +89,7 @@ const openAddDialog = () => {
     currency: 'CNY',
     comment: '',
     category: '',
-    expenseDate: new Date().toISOString().split('T')[0]
+    expenseDate: getTodayDateString()
   };
   showAddDialog.value = true;
 };
@@ -96,11 +98,11 @@ const openAddDialog = () => {
 const openEditDialog = (expense: any) => {
   editingExpenseId.value = expense.id;
   expenseForm.value = {
-    amount: expense.amount,
-    currency: expense.currency,
-    comment: expense.comment,
-    category: expense.category,
-    expenseDate: expense.expenseDate
+    amount: Number(expense.amount ?? 0),
+    currency: expense.currency ?? 'CNY',
+    comment: expense.comment ?? '',
+    category: expense.category ?? '',
+    expenseDate: expense.expenseDate ?? getTodayDateString()
   };
   showEditDialog.value = true;
 };
@@ -198,11 +200,6 @@ const openBudgetDialog = async () => {
   await expensesStore.fetchBudget(props.tripId);
   showBudgetDialog.value = true;
 };
-
-// 计算总支出
-const totalExpenses = computed(() => {
-  return expensesStore.expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-});
 
 // 组件挂载时加载数据
 onMounted(() => {
