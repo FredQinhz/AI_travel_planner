@@ -52,6 +52,8 @@ ai-travel-planner/
 ├─ .github/workflows/    # CI/CD (GitHub Actions)
 ├─ API_Documentation.md  # REST API 说明
 ├─ requirements_specification.md # 需求规格说明
+├─ ENV_SETUP.md          # 环境变量配置说明
+├─ RELEASE_GUIDE.md      # 发布指南
 └─ README.md
 ```
 
